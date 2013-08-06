@@ -83,18 +83,23 @@ store() {
 
 # handle notify section in backup model
 # $1 - backup model file
-# $2 - tmp backup directory
+# $2 - return value of backup
+# $3 - temporary file holding the names of the failed backups
+# "$@" - extra plugin parameters
 notify() {
 	local backup_model=$1; shift
-	local tmp_backup_dir=$1; shift
+	local -i backup_retval=$1; shift
+	local failed_backups_tmp_file=$1; shift
 
-	# first parameter should be the module to run
+	# first parameter after should be the module to run
 	local module=$1; shift
+
+	# we are interested only in the name
+	backup_model=`basename $backup_model`
 
 	# execute module in subshell, to not contaminate environment
 	(source $MODULES_DIR/notify/$module.sh && \
-		export _BACKUP_DEST=$tmp_backup_dir && \
-		execute "$@")
+		execute $backup_model $backup_retval $failed_backups_tmp_file "$@")
 }
 
 # gets all the commands for a specific model
@@ -132,6 +137,8 @@ $command"
 	done
 
 	# iterate on backup and store sections
+	local failed_backups
+	local succeeded_backups
 	IFS=$'\n'
 	for step in backup store; do
 		IFS=$'\n'
@@ -142,12 +149,15 @@ $command"
 			logger_info "Executing module '$step::$module' with parameters '$module_parameters'"
 			# execute step, which will apply it's logic
 			# run with eval, so module_parameters is passed as multiple parameters
+			# call backup() step
 			eval $step $backup_model $tmp_backup_dir $module $module_parameters
 			if [ $? -ne 0 ]; then
 				logger_warn "Module '$step::$module' failed :("
+				local failed_backups="$failed_backups '$step::$module'"
 				let retval=$retval+1
 			else
 				logger_info "Module '$step::$module' was successful :)"
+				local succeeded_backups="$succeeded_backups '$step::$module'"
 			fi
 		done
 	done
@@ -155,7 +165,22 @@ $command"
 	# cleanup temporary backup directory
 	rm -rf $tmp_backup_dir
 
-	# TODO call notify plugins
+	# call notify plugins
+	IFS=$'\n'
+	local failed_backups_tmp_file=`mktemp`
+	# chuck the failed backups to a temporary file, will be easier to handle
+	echo "$failed_backups" > $failed_backups_tmp_file
+	for command in `get_commands $backup_model notify`; do
+		unset IFS
+		local module=`echo $command | cut -d' ' -f1`
+		local module_parameters=`echo $command | cut -d' ' -f2-`
+		logger_info "Notifying backup status via 'notify::$module' with parameters '$? $module_parameters'"
+		# call notify() step
+		eval notify $backup_model $retval $failed_backups_tmp_file $module $module_parameters
+	done
+	rm -f $failed_backups_tmp_file
+
+	return $retval
 }
 
 # prints usage and exits
