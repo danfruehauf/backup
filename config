@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# Written by Dan Fruehauf <malkodan@gmail.com>
+
+# base directory for all the modules
+MODULES_DIR=./modules
