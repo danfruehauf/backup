@@ -171,7 +171,6 @@ $command"
 	IFS=$'\n'
 	local failed_backups_tmp_file=`mktemp`
 	# chuck the failed backups to a temporary file, will be easier to handle
-	get_commands $backup_model notify
 	echo "$failed_backups" > $failed_backups_tmp_file
 	for command in `get_commands $backup_model notify`; do
 		unset IFS
