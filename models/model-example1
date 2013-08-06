@@ -1,0 +1,51 @@
+#!/bin/bash
+
+# initiate logging modules
+# you may specify multiple logging destinations, it's all good :)
+log() {
+	# log to a log file at /var/log/backups/backups.log
+	logfile /var/log/backups/backups.log
+
+	# log to another log file at /var/log/backups/backups2.log
+	logfile /var/log/backups/backups2.log
+
+	# log to syslog facility local0
+	syslog local0
+}
+
+# actual objects for backup
+# this will dump everything to a temporary directory
+backup() {
+	# copy contents of /etc/backup-dir-1 to backup context (sub directory)
+	# backup-dir-1
+	rsync backup-dir-1    /backup-dir-1
+
+	# copy root@piglet:/etc to piglet backup
+	rsync piglet root@piglet:/etc
+	# and add piglet:/var to piglet backup
+	rsync piglet root@piglet:/var
+
+	# backup a pgsql database
+	# the tuple below is:
+	# HOSTNAME:PORT:DB:USERNAME:PASSWORD
+	pgsql zebra africa:5432:lions_domain:lion:hyena
+}
+
+# store the backup
+# this will copy the temporary directory we backed into to other locations
+store() {
+	# copy backup locally to /var/backups
+	cp    /var/backups
+
+	# cycle local backups, leaving only the 2 latest backups
+	cycle /var/backups 2
+}
+
+# notifications of backup status
+notify() {
+	# notify via nagios NSCA
+	# first parameter is the nagios monitor name, the rest of the parameters
+	# will just be passed to the send_nsca binary
+	nagios_nsca "backup monitor" -H nagios.emii.org.au
+}
+
