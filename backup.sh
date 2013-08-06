@@ -51,7 +51,7 @@ _logger() {
 # $1 - backup model file
 # $2 - tmp backup directory
 # $3 - module to run
-backup() {
+_backup() {
 	local backup_model=$1; shift
 	local tmp_backup_dir=$1; shift
 	local module=$1; shift
@@ -71,7 +71,7 @@ backup() {
 # $1 - backup model file
 # $2 - tmp backup directory
 # $3 - module to run
-store() {
+_store() {
 	local backup_model=$1; shift
 	local tmp_backup_dir=$1; shift
 	local module=$1; shift
@@ -86,7 +86,7 @@ store() {
 # $2 - return value of backup
 # $3 - temporary file holding the names of the failed backups
 # "$@" - extra plugin parameters
-notify() {
+_notify() {
 	local backup_model=$1; shift
 	local -i backup_retval=$1; shift
 	local failed_backups_tmp_file=$1; shift
@@ -109,7 +109,9 @@ get_commands() {
 	local backup_model=$1; shift
 	local mod_type=$1; shift
 	# use some sed to return things in a pretty way
-	(source $backup_model; declare -f $mod_type | \
+	(source $backup_model && \
+		declare -f $mod_type >& /dev/null && \
+		declare -f $mod_type | \
 		sed -e '1,2d' -e '$d' -e '/^#/d' -e 's/;$//g' -e 's#^\s\+##g')
 }
 
@@ -150,7 +152,7 @@ $command"
 			# execute step, which will apply it's logic
 			# run with eval, so module_parameters is passed as multiple parameters
 			# call backup() step
-			eval $step $backup_model $tmp_backup_dir $module $module_parameters
+			eval _$step $backup_model $tmp_backup_dir $module $module_parameters
 			if [ $? -ne 0 ]; then
 				logger_warn "Module '$step::$module' failed :("
 				local failed_backups="$failed_backups '$step::$module'"
@@ -169,6 +171,7 @@ $command"
 	IFS=$'\n'
 	local failed_backups_tmp_file=`mktemp`
 	# chuck the failed backups to a temporary file, will be easier to handle
+	get_commands $backup_model notify
 	echo "$failed_backups" > $failed_backups_tmp_file
 	for command in `get_commands $backup_model notify`; do
 		unset IFS
@@ -176,7 +179,7 @@ $command"
 		local module_parameters=`echo $command | cut -d' ' -f2-`
 		logger_info "Notifying backup status via 'notify::$module' with parameters '$? $module_parameters'"
 		# call notify() step
-		eval notify $backup_model $retval $failed_backups_tmp_file $module $module_parameters
+		eval notify _$backup_model $retval $failed_backups_tmp_file $module $module_parameters
 	done
 	rm -f $failed_backups_tmp_file
 
