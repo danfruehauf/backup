@@ -119,7 +119,19 @@ get_commands() {
 # $1 - backup model
 execute_backup() {
 	local backup_model="$1"; shift
+
+	# backup model exists?
 	test -f "$backup_model" || logger_fatal "Backup model '$backup_model' does not exist"
+
+	# initialize loggers in the global variables LOG_FACILITIES, separated by
+	# new lines :)
+	# I HATE GLOBAL VARIABLES :/
+	IFS=$'\n'
+	for command in `get_commands $backup_model log`; do
+		unset IFS
+		LOG_FACILITIES="$LOG_FACILITIES
+$command"
+	done
 	logger_info "Executing backup model '"`basename $backup_model`"'"
 
 	# set the backup name
@@ -128,15 +140,6 @@ execute_backup() {
 	local tmp_backup_dir=`mktemp -d`
 	logger_info "Temp directory for backup is '$tmp_backup_dir'"
 	local -i retval=0
-
-	# initialize loggers in the global variables LOG_FACILITIES, separated by
-	# new lines :)
-	IFS=$'\n'
-	for command in `get_commands $backup_model log`; do
-		unset IFS
-		LOG_FACILITIES="$LOG_FACILITIES
-$command"
-	done
 
 	# iterate on backup and store sections
 	local failed_backups
@@ -166,6 +169,13 @@ $command"
 
 	# cleanup temporary backup directory
 	rm -rf $tmp_backup_dir
+
+	# log a message after the backup was complete
+	if [ $retval -ne 0 ]; then
+		logger_warn "Backup failed for modules: '$failed_backups'"
+	else
+		logger_info "Backup completed successfully."
+	fi
 
 	# call notify plugins
 	IFS=$'\n'
@@ -225,53 +235,6 @@ main() {
 	for model in $models; do
 		execute_backup $model
 	done
-}
-
-# main
-main2() {
-	# create backup destination all the time as the first thing
-	# otherwise pull-backups.sh will fail
-	test -d $BACKUP_DESTINATION || mkdir -p $BACKUP_DESTINATION
-
-	local backup_destination=`mktemp -d`
-	echo "Backup destination is: $backup_destination"
-	local backup_module
-	local -i retval=0
-	if [ x"$BACKUP_MODULES" = x ]; then
-		echo "No backup modules defined, quitting" 1>&2
-		rmdir $backup_destination
-		return 1
-	fi
-	for backup_module in $BACKUP_MODULES; do
-		$backup_module-backup.sh $backup_destination
-		let retval=$retval+$?
-	done
-
-	# create a temporary filename for backup
-	# experimented with bzip2 and gzip is just much faster and compresses
-	# almost as much
-	local backup_compressed_filename=`mktemp --suffix=-\`hostname\`-\`date '+%Y%m%d-%H%m%S'\`.tar.gz`
-
-	pack_backup $backup_compressed_filename $backup_destination
-	let retval=$retval+$?
-
-	spool_backup_to_ftp $backup_compressed_filename
-	let retval=$retval+$?
-
-	if [ $retval -eq 0 ]; then
-		move_backup_to_backup_directory $backup_compressed_filename && \
-		rotate_backups
-		let retval=$retval+$?
-	fi
-
-	if [ x"$backup_destination" = x -o "$backup_destination" = "/" ]; then
-		echo "backup script tried to remove an empty directory, or the root directory - THIS IS A SERIOUS BUG!!!" 1>2
-		exit 15
-	fi
-	rm -rf --preserve-root $backup_destination
-	rm -f $backup_compressed_filename
-
-	return $retval
 }
 
 main "$@"
