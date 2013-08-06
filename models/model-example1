@@ -47,5 +47,9 @@ notify() {
 	# first parameter is the nagios monitor name, the rest of the parameters
 	# will just be passed to the send_nsca binary
 	nagios_nsca "backup monitor" -H nagios.emii.org.au
+
+	# notify via pushover, implemented with curl
+	# you'll just have to specify the user token and app token
+	pushover USER_TOKEN APP_TOKEN
 }
 

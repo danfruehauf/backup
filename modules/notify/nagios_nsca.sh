@@ -3,8 +3,9 @@
 # notifies via nagios nsca the backup status
 # $1 - backup model name
 # $2 - backup retval
-# "$3" - space separated list of backups that failed
-# "$@" - extra parameters from plugin
+# $3 - temporary file holding the names of the failed backups
+# $4 - nagios monitor name
+# "$@" - extra parameters from plugin, passed to send_nsca
 execute() {
 	local backup_model=$1; shift
 	local -i backup_retval=$1; shift
