@@ -29,6 +29,9 @@ backup() {
 	# the tuple below is:
 	# HOSTNAME:PORT:DB:USERNAME:PASSWORD
 	pgsql zebra africa:5432:lions_domain:lion:hyena
+
+	# backup a mysql database, pretty simple to the pgsql one
+	mysql zebra africa:5432:lions_domain:lion:hyena
 }
 
 # store the backup
@@ -39,6 +42,12 @@ store() {
 
 	# cycle local backups, leaving only the 2 latest backups
 	cycle /var/backups 2
+
+	# store with scp crapper:/var/backups, with context name backy
+	# using key at ~/.ssh/id_rsa
+	# password authentication is not support, use key exchange if you need
+	# scp backups
+	scp   backy root@crapper:/var/backups -i ~/.ssh/id_rsa
 }
 
 # notifications of backup status
