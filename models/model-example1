@@ -40,6 +40,10 @@ process() {
 	# gzip all files in this backup
 	# quote the regular expression, especially if it contains a * :)
 	gzip '.*'
+
+	# encrypt all files ending with .sh with a gpg key located at
+	# /home/john/john-gpg-key.asc
+	gpg '.*\.sh$' /home/john/john-gpg-key.asc
 }
 
 # store the backup
