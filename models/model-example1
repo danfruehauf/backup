@@ -34,6 +34,14 @@ backup() {
 	mysql zebra africa:5432:lions_domain:lion:hyena
 }
 
+# post processing of backup
+# add here compressoin, encryption, what not...
+process() {
+	# gzip all files in this backup
+	# quote the regular expression, especially if it contains a * :)
+	gzip '.*'
+}
+
 # store the backup
 # this will copy the temporary directory we backed into to other locations
 store() {

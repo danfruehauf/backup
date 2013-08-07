@@ -67,6 +67,20 @@ _backup() {
 		execute "$@")
 }
 
+# handle process section in backup model
+# $1 - backup model file
+# $2 - tmp backup directory
+# $3 - module to run
+_process() {
+	local backup_model=$1; shift
+	local tmp_backup_dir=$1; shift
+	local module=$1; shift
+	# execute module in subshell, to not contaminate environment
+	(source $MODULES_DIR/process/$module.sh && \
+		export _BACKUP_DEST=$tmp_backup_dir && \
+		execute "$@")
+}
+
 # handle store section in backup model
 # $1 - backup model file
 # $2 - tmp backup directory
@@ -145,7 +159,7 @@ $command"
 	local failed_backups
 	local succeeded_backups
 	IFS=$'\n'
-	for step in backup store; do
+	for step in backup process store; do
 		IFS=$'\n'
 		for command in `get_commands $backup_model $step`; do
 			unset IFS
@@ -188,7 +202,7 @@ $command"
 		local module_parameters=`echo $command | cut -d' ' -f2-`
 		logger_info "Notifying backup status via 'notify::$module' with parameters '$? $module_parameters'"
 		# call notify() step
-		eval notify _$backup_model $retval $failed_backups_tmp_file $module $module_parameters
+		eval _notify $backup_model $retval $failed_backups_tmp_file $module $module_parameters
 	done
 	rm -f $failed_backups_tmp_file
 
