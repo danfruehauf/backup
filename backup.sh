@@ -59,9 +59,10 @@ _initialize_logger() {
 	# initialize loggers in the global variables LOG_FACILITIES, separated by
 	# new lines :)
 	# I HATE GLOBAL VARIABLES :/
-	IFS=$'\n'
-	for command in `get_commands $backup_model log`; do
-		unset IFS
+	local command
+	get_commands $backup_model log \
+		| while read command; do
+
 		LOG_FACILITIES="$LOG_FACILITIES
 $command"
 	done
@@ -180,11 +181,12 @@ backup() {
 	# iterate on backup and store sections
 	local failed_backups
 	local succeeded_backups
-	IFS=$'\n'
 	for step in backup process store; do
-		IFS=$'\n'
-		for command in `get_commands $backup_model $step`; do
-			unset IFS
+		local command
+		# feed commands to while loop
+		get_commands $backup_model $step \
+			| while read command; do
+
 			local module=`echo $command | cut -d' ' -f1`
 			local module_parameters=`echo $command | cut -d' ' -f2-`
 			logger_info "Executing module '$step::$module' with parameters '$module_parameters'"
@@ -214,12 +216,13 @@ backup() {
 	fi
 
 	# call notify plugins
-	IFS=$'\n'
 	local failed_backups_tmp_file=`mktemp`
 	# chuck the failed backups to a temporary file, will be easier to handle
 	echo "$failed_backups" > $failed_backups_tmp_file
-	for command in `get_commands $backup_model notify`; do
-		unset IFS
+	# feed notify commands to while loop
+	get_commands $backup_model notify \
+		| while read command; do
+
 		local module=`echo $command | cut -d' ' -f1`
 		local module_parameters=`echo $command | cut -d' ' -f2-`
 		logger_info "Notifying backup status via 'notify::$module' with parameters '$? $module_parameters'"
@@ -254,17 +257,16 @@ restore() {
 	# iterate on backup and store sections
 	local failed_backups
 	local succeeded_backups
-	IFS=$'\n'
 	# run steps in reverse
 	for step in store process backup; do
-		IFS=$'\n'
 		# run commands in reverse
 		# if we're in the store step, we can just take the first command, as we need
 		# to collect the backup just from one source
 		#if [ "$step" = "store" ]; then
 		#fi
-		for command in `get_commands $backup_model $step | tac`; do
-			unset IFS
+		get_commands $backup_model $step \
+			| while read command; do
+
 			local module=`echo $command | cut -d' ' -f1`
 			local module_parameters=`echo $command | cut -d' ' -f2-`
 			logger_info "Executing module '$step::$module' with parameters '$module_parameters'"
@@ -294,12 +296,13 @@ restore() {
 	fi
 
 	# call notify plugins
-	IFS=$'\n'
 	local failed_backups_tmp_file=`mktemp`
 	# chuck the failed backups to a temporary file, will be easier to handle
 	echo "$failed_backups" > $failed_backups_tmp_file
-	for command in `get_commands $backup_model notify`; do
-		unset IFS
+
+	# iterate on notification commands
+	get_commands $backup_model notify \
+		| while read command; do
 		local module=`echo $command | cut -d' ' -f1`
 		local module_parameters=`echo $command | cut -d' ' -f2-`
 		logger_info "Notifying restore status via 'notify::$module' with parameters '$? $module_parameters'"
