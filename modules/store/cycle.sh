@@ -20,3 +20,8 @@ backup() {
 		(cd $directory && ls -1td */ | tail -$backups_to_remove | xargs rm --preserve-root -rf)
 	fi
 }
+
+# not really implemented for cycle, just return 0
+restore() {
+	return 0
+}
