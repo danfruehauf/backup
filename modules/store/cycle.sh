@@ -21,7 +21,8 @@ backup() {
 	fi
 }
 
-# not really implemented for cycle, just return 0
+# not really implemented for cycle, just return 1, so we signal we didn't find
+# any backup
 restore() {
-	return 0
+	return 1
 }

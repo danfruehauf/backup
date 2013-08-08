@@ -60,12 +60,11 @@ _initialize_logger() {
 	# new lines :)
 	# I HATE GLOBAL VARIABLES :/
 	local command
-	get_commands $backup_model log \
-		| while read command; do
+	while read command; do
 
 		LOG_FACILITIES="$LOG_FACILITIES
 $command"
-	done
+	done < <(get_commands $backup_model log)
 }
 
 # handle backup section in backup model
@@ -184,9 +183,7 @@ backup() {
 	for step in backup process store; do
 		local command
 		# feed commands to while loop
-		get_commands $backup_model $step \
-			| while read command; do
-
+		while read command; do
 			local module=`echo $command | cut -d' ' -f1`
 			local module_parameters=`echo $command | cut -d' ' -f2-`
 			logger_info "Executing module '$step::$module' with parameters '$module_parameters'"
@@ -202,7 +199,7 @@ backup() {
 				logger_info "Module '$step::$module' was successful :)"
 				local succeeded_backups="$succeeded_backups '$step::$module'"
 			fi
-		done
+		done < <(get_commands $backup_model $step)
 	done
 
 	# cleanup temporary backup directory
@@ -220,15 +217,13 @@ backup() {
 	# chuck the failed backups to a temporary file, will be easier to handle
 	echo "$failed_backups" > $failed_backups_tmp_file
 	# feed notify commands to while loop
-	get_commands $backup_model notify \
-		| while read command; do
-
+	while read command; do
 		local module=`echo $command | cut -d' ' -f1`
 		local module_parameters=`echo $command | cut -d' ' -f2-`
 		logger_info "Notifying backup status via 'notify::$module' with parameters '$? $module_parameters'"
 		# call notify() step
 		eval _notify $backup_model $retval $failed_backups_tmp_file $module $module_parameters
-	done
+	done < <(get_commands $backup_model notify)
 	rm -f $failed_backups_tmp_file
 
 	return $retval
@@ -257,16 +252,17 @@ restore() {
 	# iterate on backup and store sections
 	local failed_backups
 	local succeeded_backups
+	local found_backup=false
 	# run steps in reverse
 	for step in store process backup; do
-		# run commands in reverse
-		# if we're in the store step, we can just take the first command, as we need
-		# to collect the backup just from one source
-		#if [ "$step" = "store" ]; then
-		#fi
-		get_commands $backup_model $step | tac \
-			| while read command; do
+		env > /tmp/33
+		# if we passed the 'store' step and we didn't get a backup - we stop
+		if [ "$step" = "process" ] && [ "$found_backup" != "true" ]; then
+			logger_fatal "Could not load backup from any source, aborted."
+		fi
 
+		# run commands in reverse (tac), see below
+		while read command; do
 			local module=`echo $command | cut -d' ' -f1`
 			local module_parameters=`echo $command | cut -d' ' -f2-`
 			logger_info "Executing module '$step::$module' with parameters '$module_parameters'"
@@ -276,13 +272,25 @@ restore() {
 			eval _$step restore $backup_model $tmp_backup_dir $module $module_parameters
 			if [ $? -ne 0 ]; then
 				logger_warn "Module '$step::$module' failed :("
-				local failed_backups="$failed_backups '$step::$module'"
-				let retval=$retval+1
+				if [ "$step" = "store" ]; then
+					# no need to log failed backups, we'll just try the next module
+					true
+				else
+					local failed_backups="$failed_backups '$step::$module'"
+					let retval=$retval+1
+				fi
 			else
 				logger_info "Module '$step::$module' was successful :)"
 				local succeeded_backups="$succeeded_backups '$step::$module'"
+				if [ "$step" = "store" ]; then
+					# if we're in the store step, we can just take the first command, as we need
+					# to collect the backup just from one source
+					logger_info "Found backup using module '$step::$module'!! :)"
+					found_backup="true"
+					break
+				fi
 			fi
-		done
+		done < <(get_commands $backup_model $step | tac)
 	done
 
 	# cleanup temporary backup directory
@@ -301,14 +309,13 @@ restore() {
 	echo "$failed_backups" > $failed_backups_tmp_file
 
 	# iterate on notification commands
-	get_commands $backup_model notify \
-		| while read command; do
+	while read command; do
 		local module=`echo $command | cut -d' ' -f1`
 		local module_parameters=`echo $command | cut -d' ' -f2-`
 		logger_info "Notifying restore status via 'notify::$module' with parameters '$? $module_parameters'"
 		# call notify() step
 		eval _notify restore $backup_model $retval $failed_backups_tmp_file $module $module_parameters
-	done
+	done < <(get_commands $backup_model notify)
 	rm -f $failed_backups_tmp_file
 
 	return $retval
