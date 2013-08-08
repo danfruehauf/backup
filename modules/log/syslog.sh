@@ -20,8 +20,9 @@
 
 # logs message via syslog
 # "$@" - message to log
+# $1 - log level
+# $2 - log facility
 initialize() {
-	# TODO parse priority/facility
 	local log_level=$1; shift
 	local log_facility=$1; shift
 	/bin/logger -p $log_facility.$log_level "$@"

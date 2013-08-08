@@ -18,6 +18,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
+# pushover URL to use
 declare -r PUSHOVER_URL="https://api.pushover.net/1/messages"
 
 # notifies via pushover nsca the backup status

@@ -27,7 +27,7 @@ backup() {
 }
 
 # untar
-# "$@" - arguments for tar, usually it'll be the filename to untar
+# "$@" - arguments for tar, usually it'll be the filename to untar - unused!!
 restore() {
 	# restore tar archive
 	logger_info "Untarring with parameters '$@'"

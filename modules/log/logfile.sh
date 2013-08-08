@@ -20,6 +20,8 @@
 
 # logs message to a file
 # message will arrive via STDIN
+# $1 - log level
+# $2 - log file to log to
 initialize() {
 	local log_level=$1; shift
 	local log_file=$1; shift
