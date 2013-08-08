@@ -264,7 +264,7 @@ restore() {
 		# to collect the backup just from one source
 		#if [ "$step" = "store" ]; then
 		#fi
-		get_commands $backup_model $step \
+		get_commands $backup_model $step | tac \
 			| while read command; do
 
 			local module=`echo $command | cut -d' ' -f1`
