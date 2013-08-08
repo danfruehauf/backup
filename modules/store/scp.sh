@@ -5,7 +5,7 @@
 # copies backup with rsync
 # $1 - backup destination
 # "$@" - rsync parameters
-execute() {
+backup() {
 	local backup_name=$1; shift
 	local scp_destination=$1; shift
 	local backup_destination="$scp_destination/$backup_name-"`date '+%Y.%m.%d.%H.%m.%S'`

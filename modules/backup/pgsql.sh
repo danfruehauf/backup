@@ -5,7 +5,7 @@
 # backup for a pgsql database
 # $1 - credentials and settings for pg_dump, a colon separated tuple
 # "$@" - parameters for pg_dump
-execute() {
+backup() {
 	# credentials will be in the form of:
 	# HOSTNAME:PORT:DB:USERNAME:PASSWORD
 	local credentials=$1; shift

@@ -3,7 +3,7 @@
 # leave only $backups_to_leave backup files in $directory
 # $1 - directory
 # $2 - backups_to_leave
-execute() {
+backup() {
 	local directory=$1; shift
 	local -i backups_to_leave=$1; shift
 	[ $backups_to_leave -eq 0 ] && \

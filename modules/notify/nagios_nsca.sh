@@ -6,7 +6,7 @@
 # $3 - temporary file holding the names of the failed backups
 # $4 - nagios monitor name
 # "$@" - extra parameters from plugin, passed to send_nsca
-execute() {
+initialize() {
 	local backup_model=$1; shift
 	local -i backup_retval=$1; shift
 	local failed_backups_tmp_file=$1; shift

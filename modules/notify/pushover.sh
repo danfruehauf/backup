@@ -9,7 +9,7 @@ declare -r PUSHOVER_URL="https://api.pushover.net/1/messages"
 # $4 - pushover user
 # $5 - pushover token
 # "$@" - extra parameters from plugin, passed to curl
-execute() {
+initialize() {
 	local backup_model=$1; shift
 	local -i backup_retval=$1; shift
 	local failed_backups_tmp_file=$1; shift

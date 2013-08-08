@@ -5,7 +5,7 @@
 # backup for a mysql database
 # $1 - credentials and settings for mysqldump, a colon separated tuple
 # "$@" - parameters for mysqldump
-execute() {
+backup() {
 	# credentials will be in the form of:
 	# HOSTNAME:PORT:DB:USERNAME:PASSWORD
 	local credentials=$1; shift

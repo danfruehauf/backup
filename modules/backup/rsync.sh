@@ -6,7 +6,7 @@
 # usually the backup object name will be the name of the remote host
 # $1 - backup path
 # "$@" - rsync parameters
-execute() {
+backup() {
 	local backup_source="$1"; shift
 	logger_info "Using rsync to copy backup from '$backup_source'"
 	mkdir -p "$_BACKUP_DEST/$_BACKUP_OBJECT_NAME" && \

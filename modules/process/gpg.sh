@@ -6,7 +6,7 @@ declare -r GPG_SUFFIX=gpg
 # encrypts files with gpg
 # $1 - regexp for files to encrypt with gpg
 # $2 - key file to encrypt with
-execute() {
+backup() {
 	local regexp="$1"; shift
 	local key_file=$1; shift
 

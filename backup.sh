@@ -42,16 +42,33 @@ _logger() {
 		unset IFS
 		local logger_module=`echo $log_facility | cut -d' ' -f1`
 		local logger_params=`echo $log_facility | cut -d' ' -f2-`
-		(source $MODULES_DIR/log/$logger_module.sh && echo $msg | execute $log_level $logger_params)
+		(source $MODULES_DIR/log/$logger_module.sh && echo $msg | initialize $log_level $logger_params)
 	done
 	echo $msg
 }
 
+# initialize all loggers, using the LOG_FACILITIES variable
+# $1 - backup model
+_initialize_logger() {
+	local backup_model=$1; shift
+	# initialize loggers in the global variables LOG_FACILITIES, separated by
+	# new lines :)
+	# I HATE GLOBAL VARIABLES :/
+	IFS=$'\n'
+	for command in `get_commands $backup_model log`; do
+		unset IFS
+		LOG_FACILITIES="$LOG_FACILITIES
+$command"
+	done
+}
+
 # handle backup section in backup model
-# $1 - backup model file
-# $2 - tmp backup directory
-# $3 - module to run
+# $1 - operation mode - backup/restore
+# $2 - backup model file
+# $3 - tmp backup directory
+# $4 - module to run
 _backup() {
+	local mode=$1; shift
 	local backup_model=$1; shift
 	local tmp_backup_dir=$1; shift
 	local module=$1; shift
@@ -64,35 +81,39 @@ _backup() {
 	(source $MODULES_DIR/backup/$module.sh && \
 		export _BACKUP_DEST=$tmp_backup_dir && \
 		export _BACKUP_OBJECT_NAME=$backup_object_name && \
-		execute "$@")
+		$mode "$@")
 }
 
 # handle process section in backup model
-# $1 - backup model file
-# $2 - tmp backup directory
-# $3 - module to run
+# $1 - operation mode - backup/restore
+# $2 - backup model file
+# $3 - tmp backup directory
+# $4 - module to run
 _process() {
+	local mode=$1; shift
 	local backup_model=$1; shift
 	local tmp_backup_dir=$1; shift
 	local module=$1; shift
 	# execute module in subshell, to not contaminate environment
 	(source $MODULES_DIR/process/$module.sh && \
 		export _BACKUP_DEST=$tmp_backup_dir && \
-		execute "$@")
+		$mode "$@")
 }
 
 # handle store section in backup model
-# $1 - backup model file
-# $2 - tmp backup directory
-# $3 - module to run
+# $1 - operation mode - backup/restore
+# $2 - backup model file
+# $3 - tmp backup directory
+# $4 - module to run
 _store() {
+	local mode=$1; shift
 	local backup_model=$1; shift
 	local tmp_backup_dir=$1; shift
 	local module=$1; shift
 	# execute module in subshell, to not contaminate environment
 	(source $MODULES_DIR/store/$module.sh && \
 		export _BACKUP_DEST=$tmp_backup_dir && \
-		execute "$@")
+		$mode "$@")
 }
 
 # handle notify section in backup model
@@ -113,7 +134,7 @@ _notify() {
 
 	# execute module in subshell, to not contaminate environment
 	(source $MODULES_DIR/notify/$module.sh && \
-		execute $backup_model $backup_retval $failed_backups_tmp_file "$@")
+		initialize $backup_model $backup_retval $failed_backups_tmp_file "$@")
 }
 
 # gets all the commands for a specific model
@@ -131,21 +152,15 @@ get_commands() {
 
 # executes a single backup model
 # $1 - backup model
-execute_backup() {
+backup() {
 	local backup_model="$1"; shift
 
 	# backup model exists?
 	test -f "$backup_model" || logger_fatal "Backup model '$backup_model' does not exist"
 
-	# initialize loggers in the global variables LOG_FACILITIES, separated by
-	# new lines :)
-	# I HATE GLOBAL VARIABLES :/
-	IFS=$'\n'
-	for command in `get_commands $backup_model log`; do
-		unset IFS
-		LOG_FACILITIES="$LOG_FACILITIES
-$command"
-	done
+	# initialize all the loggers
+	_initialize_logger $backup_model
+
 	logger_info "Executing backup model '"`basename $backup_model`"'"
 
 	# set the backup name
@@ -169,7 +184,7 @@ $command"
 			# execute step, which will apply it's logic
 			# run with eval, so module_parameters is passed as multiple parameters
 			# call backup() step
-			eval _$step $backup_model $tmp_backup_dir $module $module_parameters
+			eval _$step backup $backup_model $tmp_backup_dir $module $module_parameters
 			if [ $? -ne 0 ]; then
 				logger_warn "Module '$step::$module' failed :("
 				local failed_backups="$failed_backups '$step::$module'"
@@ -218,6 +233,8 @@ Options:
   -h             Prints this help message.
   -c             Config file to use.
   -m             Model to run. Can be specified multiple time.
+  -b             Run in backup mode (default).
+  -r             Run in restore mode.
 "
 	exit 2
 }
@@ -225,17 +242,20 @@ Options:
 # main
 main() {
 	local tmp_getops
-	tmp_getops=`getopt -o hc:m: --long help,config:,model: -- "$@"`
+	tmp_getops=`getopt -o hc:m:br --long help,config:,model:,backup,restore -- "$@"`
 	[ $? != 0 ] && usage
 	eval set -- "$tmp_getops"
 
 	# parse options
 	local config models
+	local mode=backup
 	while true; do
 		case "$1" in
 			-h|--help) usage;;
 			-c|--config) config="$2"; shift 2;;
 			-m|--model) models="$models $2"; shift 2;;
+			-r|--restore) mode="restore"; shift 1;;
+			-b|--backup) mode="backup"; shift 1;;
 			--) shift; break;;
 			*) usage;;
 		esac
@@ -247,7 +267,11 @@ main() {
 
 	local model
 	for model in $models; do
-		execute_backup $model
+		if [ "$mode" = "restore" ]; then
+			restore $model
+		else
+			backup $model
+		fi
 	done
 }
 
