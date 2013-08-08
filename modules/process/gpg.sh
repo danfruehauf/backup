@@ -45,6 +45,14 @@ backup() {
 	rm -rf --preserve-root $tmp_gpg_homedir
 }
 
+# decrypts files with gpg
+# $1 - regexp for files to descypt with gpg
+# $2 - key file to decrypt with
+restore() {
+	# TODO implement
+	logger_fatal "backup::scp: Restore functionality unimplemented"
+}
+
 # imports a gpg key
 # $1 - gpg temporary homedir
 _import_gpg_key() {
