@@ -114,79 +114,6 @@ EOF
 }
 
 #########
-# CYCLE #
-#########
-# test store::cycle backup
-test_module_backup_backup_cycle() {
-	# build a tmp model
-	local -i cycle_backups=2
-	local backup_name="$RANDOM"
-	local tmp_model=`mktemp`
-	cat > $tmp_model <<EOF
-backup() {
-	rsync $backup_name $BACKUP_SOURCE/backup
-}
-
-store() {
-	cp $BACKUP_DEST
-	cycle $BACKUP_DEST $cycle_backups
-}
-EOF
-
-	# have at least $cycle_backups in directory
-	for i in `seq 1 $cycle_backups`; do
-		$BACKUP_EXEC -m $tmp_model >& /dev/null
-		assertTrue 'exit status of backup' "[ $? -eq 0 ]"
-	done
-	local -i backups_nr=`ls -1 $BACKUP_DEST | wc -l`
-	assertTrue "cycling broken in directory, have $backups_nr, expected: $cycle_backups" \
-		"[ $backups_nr -eq $cycle_backups ]"
-
-	rm -f $tmp_model
-}
-
-######
-# GZ #
-######
-# test process::gz backup
-test_module_process_gz() {
-	# build a tmp model
-	local backup_name="$RANDOM"
-	local directory_to_backup=`ls -1 $BACKUP_SOURCE | head -1`
-	local tmp_model=`mktemp`
-	cat > $tmp_model <<EOF
-backup() {
-	tar $backup_name $BACKUP_SOURCE/$directory_to_backup
-}
-
-process() {
-	gzip '.*'
-}
-
-store() {
-	cp $BACKUP_DEST
-}
-EOF
-	$BACKUP_EXEC -m $tmp_model >& /dev/null
-	assertTrue 'exit status of backup' "[ $? -eq 0 ]"
-
-	assertTrue 'tar.gz backup failed' "test -f ${BACKUP_DEST}/*/$backup_name.tar.gz"
-
-	# remove source directory (it'll come back from backup)
-	mv $BACKUP_SOURCE/$directory_to_backup $BACKUP_SOURCE/$directory_to_backup.orig
-
-	# restore!
-	$BACKUP_EXEC -r -m $tmp_model >& /dev/null
-	assertTrue 'exit status of backup' "[ $? -eq 0 ]"
-	rm -f $tmp_model
-
-	# take a diff between directories after restore, they should be identical
-	local -i diff_lines=`diff -urN $BACKUP_SOURCE/$directory_to_backup.orig $BACKUP_SOURCE/$directory_to_backup | wc -l`
-
-	assertTrue 'restore not identical to backup' "[ $diff_lines -eq 0 ]"
-}
-
-#########
 # MYSQL #
 #########
 # test backup::mysql backup
@@ -348,6 +275,160 @@ EOF
 	echo "DROP ROLE $test_user" | eval $pgsql_admin_privs >& /dev/null
 
 	rm -f $tmp_model $pgpass_file_admin $pgpass_file_backup
+}
+
+
+########
+# GZIP #
+########
+# test process::bzip backup
+test_module_process_gzip() {
+	# build a tmp model
+	local backup_name="$RANDOM"
+	local directory_to_backup=`ls -1 $BACKUP_SOURCE | head -1`
+	local tmp_model=`mktemp`
+	cat > $tmp_model <<EOF
+backup() {
+	tar $backup_name $BACKUP_SOURCE/$directory_to_backup
+}
+
+process() {
+	gzip '.*'
+}
+
+store() {
+	cp $BACKUP_DEST
+}
+EOF
+	$BACKUP_EXEC -m $tmp_model >& /dev/null
+	assertTrue 'exit status of backup' "[ $? -eq 0 ]"
+
+	assertTrue 'tar.gz backup failed' "test -f ${BACKUP_DEST}/*/$backup_name.tar.gz"
+
+	# remove source directory (it'll come back from backup)
+	mv $BACKUP_SOURCE/$directory_to_backup $BACKUP_SOURCE/$directory_to_backup.orig
+
+	# restore!
+	$BACKUP_EXEC -r -m $tmp_model >& /dev/null
+	assertTrue 'exit status of backup' "[ $? -eq 0 ]"
+	rm -f $tmp_model
+
+	# take a diff between directories after restore, they should be identical
+	local -i diff_lines=`diff -urN $BACKUP_SOURCE/$directory_to_backup.orig $BACKUP_SOURCE/$directory_to_backup | wc -l`
+
+	assertTrue 'restore not identical to backup' "[ $diff_lines -eq 0 ]"
+}
+
+#########
+# BZIP2 #
+#########
+# test process::bzip2 backup
+test_module_process_bzip2() {
+	# build a tmp model
+	local backup_name="$RANDOM"
+	local directory_to_backup=`ls -1 $BACKUP_SOURCE | head -1`
+	local tmp_model=`mktemp`
+	cat > $tmp_model <<EOF
+backup() {
+	tar $backup_name $BACKUP_SOURCE/$directory_to_backup
+}
+
+process() {
+	bzip2 '.*'
+}
+
+store() { cp $BACKUP_DEST
+}
+EOF
+	$BACKUP_EXEC -m $tmp_model >& /dev/null
+	assertTrue 'exit status of backup' "[ $? -eq 0 ]"
+
+	assertTrue 'tar.bz2 backup failed' "test -f ${BACKUP_DEST}/*/$backup_name.tar.bz2"
+
+	# remove source directory (it'll come back from backup)
+	mv $BACKUP_SOURCE/$directory_to_backup $BACKUP_SOURCE/$directory_to_backup.orig
+
+	# restore!
+	$BACKUP_EXEC -r -m $tmp_model >& /dev/null
+	assertTrue 'exit status of backup' "[ $? -eq 0 ]"
+	rm -f $tmp_model
+
+	# take a diff between directories after restore, they should be identical
+	local -i diff_lines=`diff -urN $BACKUP_SOURCE/$directory_to_backup.orig $BACKUP_SOURCE/$directory_to_backup | wc -l`
+
+	assertTrue 'restore not identical to backup' "[ $diff_lines -eq 0 ]"
+}
+
+######
+# XZ #
+######
+# test process::xz backup
+test_module_process_xz() {
+	# build a tmp model
+	local backup_name="$RANDOM"
+	local directory_to_backup=`ls -1 $BACKUP_SOURCE | head -1`
+	local tmp_model=`mktemp`
+	cat > $tmp_model <<EOF
+backup() {
+	tar $backup_name $BACKUP_SOURCE/$directory_to_backup
+}
+
+process() {
+	xz '.*'
+}
+
+store() { cp $BACKUP_DEST
+}
+EOF
+	$BACKUP_EXEC -m $tmp_model >& /dev/null
+	assertTrue 'exit status of backup' "[ $? -eq 0 ]"
+
+	assertTrue 'tar.xz backup failed' "test -f ${BACKUP_DEST}/*/$backup_name.tar.xz"
+
+	# remove source directory (it'll come back from backup)
+	mv $BACKUP_SOURCE/$directory_to_backup $BACKUP_SOURCE/$directory_to_backup.orig
+
+	# restore!
+	$BACKUP_EXEC -r -m $tmp_model >& /dev/null
+	assertTrue 'exit status of backup' "[ $? -eq 0 ]"
+	rm -f $tmp_model
+
+	# take a diff between directories after restore, they should be identical
+	local -i diff_lines=`diff -urN $BACKUP_SOURCE/$directory_to_backup.orig $BACKUP_SOURCE/$directory_to_backup | wc -l`
+
+	assertTrue 'restore not identical to backup' "[ $diff_lines -eq 0 ]"
+}
+
+#########
+# CYCLE #
+#########
+# test store::cycle backup
+test_module_store_cycle() {
+	# build a tmp model
+	local -i cycle_backups=2
+	local backup_name="$RANDOM"
+	local tmp_model=`mktemp`
+	cat > $tmp_model <<EOF
+backup() {
+	rsync $backup_name $BACKUP_SOURCE/backup
+}
+
+store() {
+	cp $BACKUP_DEST
+	cycle $BACKUP_DEST $cycle_backups
+}
+EOF
+
+	# have at least $cycle_backups in directory
+	for i in `seq 1 $cycle_backups`; do
+		$BACKUP_EXEC -m $tmp_model >& /dev/null
+		assertTrue 'exit status of backup' "[ $? -eq 0 ]"
+	done
+	local -i backups_nr=`ls -1 $BACKUP_DEST | wc -l`
+	assertTrue "cycling broken in directory, have $backups_nr, expected: $cycle_backups" \
+		"[ $backups_nr -eq $cycle_backups ]"
+
+	rm -f $tmp_model
 }
 
 ##################
