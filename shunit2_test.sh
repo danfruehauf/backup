@@ -190,7 +190,7 @@ EOF
 # MYSQL #
 #########
 # test backup::mysql backup
-xxxtest_module_backup_mysql() {
+test_module_backup_mysql() {
 	# build a tmp model
 	local test_db="test_db_$RANDOM"
 	local directory_to_backup=`ls -1 $BACKUP_SOURCE | head -1`
@@ -230,7 +230,7 @@ EOF
 	local tmp_output1=`mktemp`
 	echo "SELECT * FROM $test_db.$test_db" | $mysql_backup_privs > $tmp_output1
 
-	$BACKUP_EXEC -m $tmp_model #>& /dev/null
+	$BACKUP_EXEC -m $tmp_model >& /dev/null
 	assertTrue 'exit status of backup' "[ $? -eq 0 ]"
 
 	# backup succeeded?
@@ -247,12 +247,12 @@ EOF
 	assertFalse 'database dropped' "[ $? -eq 0 ]"
 
 	# restore!
-	$BACKUP_EXEC -r -m $tmp_model #>& /dev/null
+	$BACKUP_EXEC -r -m $tmp_model >& /dev/null
 	assertTrue 'exit status of backup' "[ $? -eq 0 ]"
 
 	# see what came out after the restore
 	local tmp_output2=`mktemp`
-	echo "SELECT * FROM $test_db.$test_db" | $mysql_admin_privs > $tmp_output2
+	echo "SELECT * FROM $test_db.$test_db" | $mysql_backup_privs > $tmp_output2
 
 	# take a diff between directories after restore, they should be identical
 	local -i diff_lines=`diff -urN $tmp_output1 $tmp_output2 | wc -l`
@@ -263,6 +263,91 @@ EOF
 	# teardown all the DB stuff
 	echo "DROP USER $test_user@'localhost'" | $mysql_admin_privs
 	echo "DROP DATABASE $test_db" | $mysql_admin_privs
+}
+
+#########
+# PGSQL #
+#########
+# test backup::pgsql backup
+test_module_backup_pgsql() {
+	# build a tmp model
+	local test_db="test_db_$RANDOM"
+	local directory_to_backup=`ls -1 $BACKUP_SOURCE | head -1`
+	local tmp_model=`mktemp`
+	local test_user=test
+	local test_password="${RANDOM}${RANDOM}${RANDOM}"
+	cat > $tmp_model <<EOF
+backup() {
+	pgsql $test_db localhost::$test_db:$test_user:$test_password
+}
+
+store() {
+	cp $BACKUP_DEST
+}
+EOF
+	# before running this section, you'll probably have to execute something
+	# like:
+	# echo "CREATE ROLE $USER WITH SUPERUSER LOGIN PASSWORD 'some_password';" | psql
+	# another option is to change $pgsql_executable run with admin credentials like:
+	# local pgsql_admin_privs="sudo su - postgres -c 'psql'"
+	local pgpass_file_admin=`mktemp`
+	chmod 600 $pgpass_file_admin
+	echo "localhost:5432:template1:$USER:some_password" > $pgpass_file_admin
+	local pgsql_admin_privs='PGPASSFILE=$pgpass_file_admin psql -h localhost -U $USER -d template1'
+
+	local pgpass_file_backup=`mktemp`
+	chmod 600 $pgpass_file_backup
+	echo "localhost:5432:$test_db:$test_user:$test_password" > $pgpass_file_backup
+	local pgsql_backup_privs='PGPASSFILE=$pgpass_file_backup psql -h localhost -U $test_user -d $test_db'
+
+	# create role and database
+	echo "DROP ROLE $test_user" | eval $pgsql_admin_privs >& /dev/null 
+	echo "CREATE ROLE $test_user LOGIN PASSWORD '$test_password'" | eval $pgsql_admin_privs >& /dev/null
+	echo "CREATE DATABASE $test_db owner=$test_user" | eval $pgsql_admin_privs >& /dev/null
+	assertTrue 'privileges granting' "[ $? -eq 0 ]"
+
+	# build the database
+	echo "CREATE TABLE $test_db (c1 INTEGER, c2 INTEGER);" | eval $pgsql_backup_privs >& /dev/null
+	echo "INSERT INTO $test_db (c1, c2) VALUES (1,2);" | eval $pgsql_backup_privs >& /dev/null
+	echo "INSERT INTO $test_db (c1, c2) VALUES (3,4);" | eval $pgsql_backup_privs >& /dev/null
+	assertTrue 'table creation' "[ $? -eq 0 ]"
+
+	# save the table in a file
+	local tmp_output1=`mktemp`
+	echo "SELECT * FROM $test_db" | eval $pgsql_backup_privs > $tmp_output1
+
+	$BACKUP_EXEC -m $tmp_model >& /dev/null
+	assertTrue 'exit status of backup' "[ $? -eq 0 ]"
+
+	# backup succeeded?
+	assertTrue 'pgsql backup failed' "test -f ${BACKUP_DEST}/*/$test_db.sql"
+
+	# remove database and recreate it
+	echo "DROP DATABASE $test_db" | eval $pgsql_admin_privs >& /dev/null
+	echo "CREATE DATABASE $test_db owner=$test_user" | eval $pgsql_admin_privs >& /dev/null
+
+	# make sure the database was dropped
+	local tmp_query_output=`mktemp`
+	echo "SELECT * FROM $test_db" | eval $pgsql_backup_privs > $tmp_query_output 2> /dev/null
+	assertTrue 'database dropped' "[ `wc -c $tmp_query_output | cut -d' ' -f1` -eq 0 ]"
+
+	# restore!
+	$BACKUP_EXEC -r -m $tmp_model >& /dev/null
+	assertTrue 'exit status of backup' "[ $? -eq 0 ]"
+
+	# see what came out after the restore
+	local tmp_output2=`mktemp`
+	echo "SELECT * FROM $test_db" | eval $pgsql_backup_privs > $tmp_output2
+
+	# take a diff between directories after restore, they should be identical
+	local -i diff_lines=`diff -urN $tmp_output1 $tmp_output2 | wc -l`
+	assertTrue 'restore not identical to backup' "[ $diff_lines -eq 0 ]"
+
+	# teardown all the DB stuff
+	echo "DROP DATABASE $test_db" | eval $pgsql_admin_privs >& /dev/null
+	echo "DROP ROLE $test_user" | eval $pgsql_admin_privs >& /dev/null
+
+	rm -f $tmp_model $pgpass_file_admin $pgpass_file_backup
 }
 
 ##################

@@ -39,7 +39,7 @@ backup() {
 	local -i retval
 	# pass password via PGPASSFILE
 	local tmp_pgpass=`mktemp`
-	echo "$credentials" > $tmp_pgpass
+	echo "$host:$port:$name:$user:$pass" > $tmp_pgpass
 	PGPASSFILE=$tmp_pgpass pg_dump -O -x -h $host -p $port -U $user $name "$@" > "$_BACKUP_DEST/$_BACKUP_OBJECT_NAME".sql
 	retval=$?
 	rm -f $tmp_pgpass
@@ -65,7 +65,7 @@ restore() {
 	local -i retval
 	# pass password via PGPASSFILE
 	local tmp_pgpass=`mktemp`
-	echo "$credentials" > $tmp_pgpass
+	echo "$host:$port:$name:$user:$pass" > $tmp_pgpass
 	PGPASSFILE=$tmp_pgpass psql -h $host -p $port -U $user $name "$@" < "$_BACKUP_DEST/$_BACKUP_OBJECT_NAME".sql
 	retval=$?
 	rm -f $tmp_pgpass
