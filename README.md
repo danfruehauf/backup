@@ -48,6 +48,17 @@ store() {
 }
 ```
 
+Backup a MySQL and PgSQL database to `/var/backups`:
+```
+backup() {
+	pgsql db_name localhost:5432:db_name:username:password
+	mysql db_name localhost:3306:db_name:username:password
+}
+store() {
+	cp /var/backups
+}
+```
+
 Please have a look at some more examples under [models](models).
 
 ## Plugins
