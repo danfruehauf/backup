@@ -7,7 +7,6 @@
 test_module_log_logfile() {
 	# build a tmp model
 	local backup_name="$RANDOM"
-	local directory_to_backup=`ls -1 $BACKUP_SOURCE | head -1`
 	local tmp_model=`mktemp`
 	local tmp_log_file1=`mktemp -u`
 	local tmp_log_file2=`mktemp -u`
@@ -24,6 +23,7 @@ EOF
 	assertTrue 'log file created and used' "[ -f $tmp_log_file1 ]"
 	assertTrue 'log file created and used' "[ -f $tmp_log_file2 ]"
 	assertTrue 'log file created and used' "[ -f $tmp_log_file3 ]"
+	rm -f $tmp_log_file1 $tmp_log_file2 $tmp_log_file3 $tmp_model
 }
 
 ###########
@@ -172,11 +172,11 @@ oneTimeSetUp() {
 	mkdir -p $BACKUP_SOURCE_SETUP
 	# TODO
 	#(cd $BACKUP_SOURCE_SETUP && git clone git@github.com:danfruehauf/backup.git)
-	(mkdir $BACKUP_SOURCE_SETUP/backup && cp -a ./* $BACKUP_SOURCE_SETUP/backup)
+	(mkdir -p $BACKUP_SOURCE_SETUP/backup && cp -a ./* $BACKUP_SOURCE_SETUP/backup/)
 }
 
-oneTimetearDown() {
-	rm -rf --preserve-root $BACKUP_SOURCE
+oneTimeTearDown() {
+	rm -rf --preserve-root $BACKUP_SOURCE_SETUP
 }
 
 setUp() {

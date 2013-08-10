@@ -274,7 +274,6 @@ restore() {
 	local found_backup=false
 	# run steps in reverse
 	for step in store process backup; do
-		env > /tmp/33
 		# if we passed the 'store' step and we didn't get a backup - we stop
 		if [ "$step" = "process" ] && [ "$found_backup" != "true" ]; then
 			logger_fatal "Could not load backup from any source, aborted."
