@@ -178,7 +178,7 @@ get_commands() {
 
 # executes a single backup model
 # $1 - backup model
-backup() {
+backup_main() {
 	local backup_model="$1"; shift
 
 	# backup model exists?
@@ -222,7 +222,7 @@ backup() {
 	done
 
 	# cleanup temporary backup directory
-	rm -rf $tmp_backup_dir
+	rm -rf --preserve-root $tmp_backup_dir
 
 	# log a message after the backup was complete
 	if [ $retval -ne 0 ]; then
@@ -250,7 +250,7 @@ backup() {
 
 # executes a single restore model
 # $1 - backup model
-restore() {
+restore_main() {
 	local backup_model="$1"; shift
 
 	# backup model exists?
@@ -312,7 +312,7 @@ restore() {
 	done
 
 	# cleanup temporary backup directory
-	rm -rf $tmp_backup_dir
+	rm -rf --preserve-root $tmp_backup_dir
 
 	# log a message after the backup was complete
 	if [ $retval -ne 0 ]; then
@@ -378,9 +378,9 @@ main() {
 	local model
 	for model in $models; do
 		if [ "$mode" = "restore" ]; then
-			restore $model
+			restore_main $model
 		else
-			backup $model
+			backup_main $model
 		fi
 	done
 }

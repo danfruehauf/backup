@@ -36,7 +36,8 @@ log() {
 	logfile $tmp_log_file3
 }
 EOF
-	$BACKUP_EXEC -m $tmp_model >& /dev/null
+	bash -x $BACKUP_EXEC -m $tmp_model >& /dev/null
+	assertTrue 'exit status of backup' "[ $? -eq 0 ]"
 
 	assertTrue 'log file created and used' "[ -f $tmp_log_file1 ]"
 	assertTrue 'log file created and used' "[ -f $tmp_log_file2 ]"
@@ -67,6 +68,7 @@ store() {
 }
 EOF
 	$BACKUP_EXEC -m $tmp_model >& /dev/null
+	assertTrue 'exit status of backup' "[ $? -eq 0 ]"
 
 	assertTrue 'tar backup failed' "test -f ${BACKUP_DEST}/*/$backup_name.tar"
 
@@ -75,6 +77,7 @@ EOF
 
 	# restore!
 	$BACKUP_EXEC -r -m $tmp_model >& /dev/null
+	assertTrue 'exit status of backup' "[ $? -eq 0 ]"
 	rm -f $tmp_model
 
 	# take a diff between directories after restore, they should be identical
@@ -101,6 +104,7 @@ store() {
 }
 EOF
 	$BACKUP_EXEC -m $tmp_model >& /dev/null
+	assertTrue 'exit status of backup' "[ $? -eq 0 ]"
 	rm -f $tmp_model
 
 	local backup_timestamp=`ls -1 $BACKUP_DEST`
@@ -132,6 +136,7 @@ EOF
 	# have at least $cycle_backups in directory
 	for i in `seq 1 $cycle_backups`; do
 		$BACKUP_EXEC -m $tmp_model >& /dev/null
+		assertTrue 'exit status of backup' "[ $? -eq 0 ]"
 	done
 	local -i backups_nr=`ls -1 $BACKUP_DEST | wc -l`
 	assertTrue "cycling broken in directory, have $backups_nr, expected: $cycle_backups" \
@@ -163,6 +168,7 @@ store() {
 }
 EOF
 	$BACKUP_EXEC -m $tmp_model >& /dev/null
+	assertTrue 'exit status of backup' "[ $? -eq 0 ]"
 
 	assertTrue 'tar.gz backup failed' "test -f ${BACKUP_DEST}/*/$backup_name.tar.gz"
 
@@ -171,6 +177,7 @@ EOF
 
 	# restore!
 	$BACKUP_EXEC -r -m $tmp_model >& /dev/null
+	assertTrue 'exit status of backup' "[ $? -eq 0 ]"
 	rm -f $tmp_model
 
 	# take a diff between directories after restore, they should be identical
