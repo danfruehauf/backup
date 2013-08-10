@@ -22,7 +22,17 @@
 # $1 - backup destination
 # "$@" - cp parameters
 backup() {
-	local backup_destination="$1/"`_generate_date`; shift
+	local backup_destination_prefix="$1"; shift
+
+	local backup_destination
+	backup_destination="$backup_destination_prefix/"`_generate_date`
+	# ugly but simple, just sleep for 1 second
+	while [ -d "$backup_destination" ]; do
+		logger_info "'$backup_destination' already exists"
+		sleep 1
+		backup_destination="$backup_destination_prefix/"`_generate_date`
+	done
+
 	logger_info "Using cp to copy backup to '$backup_destination'"
 	mkdir -p "$backup_destination" && \
 		cp -a "$@" $_BACKUP_DEST/* "$backup_destination"

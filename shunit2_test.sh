@@ -114,7 +114,6 @@ EOF
 	# have at least $cycle_backups in directory
 	for i in `seq 1 $cycle_backups`; do
 		$BACKUP_EXEC -m $tmp_model >& /dev/null
-		sleep 1
 	done
 	local -i backups_nr=`ls -1 $BACKUP_DEST | wc -l`
 	assertTrue "cycling broken in directory, have $backups_nr, expected: $cycle_backups" \
