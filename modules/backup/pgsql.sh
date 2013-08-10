@@ -18,6 +18,9 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
+# default port for pgsql
+declare -i -r DEFAULT_PGSQL_PORT=5432
+
 # backup for a pgsql database
 # $1 - credentials and settings for pg_dump, a colon separated tuple
 # "$@" - parameters for pg_dump
@@ -26,11 +29,12 @@ backup() {
 	# HOSTNAME:PORT:DB:USERNAME:PASSWORD
 	local credentials=$1; shift
 	local host=`echo $credentials | cut -d: -f1`
-	local port=`echo $credentials | cut -d: -f2`
+	local -i port=`echo $credentials | cut -d: -f2`
 	local name=`echo $credentials | cut -d: -f3`
 	local user=`echo $credentials | cut -d: -f4`
 	local pass=`echo $credentials | cut -d: -f5-`
 	logger_info "PgSQL backup initiated with credentials: '$credentials', extra parameters: '$@'"
+	[ $port -eq 0 ] && port=$DEFAULT_PGSQL_PORT
 
 	local -i retval
 	# pass password via PGPASSFILE
