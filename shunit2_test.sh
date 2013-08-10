@@ -186,6 +186,85 @@ EOF
 	assertTrue 'restore not identical to backup' "[ $diff_lines -eq 0 ]"
 }
 
+#########
+# MYSQL #
+#########
+# test backup::mysql backup
+xxxtest_module_backup_mysql() {
+	# build a tmp model
+	local test_db="test_db_$RANDOM"
+	local directory_to_backup=`ls -1 $BACKUP_SOURCE | head -1`
+	local tmp_model=`mktemp`
+	local test_user=test
+	local test_password="${RANDOM}${RANDOM}${RANDOM}"
+	cat > $tmp_model <<EOF
+backup() {
+	mysql $test_db localhost::$test_db:$test_user:$test_password
+}
+
+store() {
+	cp $BACKUP_DEST
+}
+EOF
+	# before running this section, you'll probably have to execute something
+	# like:
+	# echo "GRANT ALL PRIVILEGES ON *.* to $USER@'localhost' WITH GRANT OPTION;" | mysql
+	# echo "FLUSH PRIVILEGES;" | mysql
+	# another option is to change $mysql_executable run with admin credentials
+	local mysql_admin_privs='mysql'
+	local mysql_backup_privs="mysql -h localhost -u $test_user -p$test_password $test_db"
+
+	# assume we have full local mysql access
+	echo "CREATE DATABASE $test_db" | $mysql_admin_privs
+	echo "CREATE USER $test_user@'localhost' IDENTIFIED BY '$test_password'" | $mysql_admin_privs
+	echo "GRANT ALL ON $test_db.* TO $test_user@'localhost'" | $mysql_admin_privs
+	assertTrue 'privileges granting' "[ $? -eq 0 ]"
+
+	# build the database
+	echo "CREATE TABLE $test_db.$test_db (c1 INT, c2 INT);" | $mysql_backup_privs
+	echo "INSERT INTO $test_db.$test_db (c1, c2) VALUES (1,2)" | $mysql_backup_privs
+	echo "INSERT INTO $test_db.$test_db (c1, c2) VALUES (3,4)" | $mysql_backup_privs
+	assertTrue 'table creation' "[ $? -eq 0 ]"
+
+	# save the table in a file
+	local tmp_output1=`mktemp`
+	echo "SELECT * FROM $test_db.$test_db" | $mysql_backup_privs > $tmp_output1
+
+	$BACKUP_EXEC -m $tmp_model #>& /dev/null
+	assertTrue 'exit status of backup' "[ $? -eq 0 ]"
+
+	# backup succeeded?
+	assertTrue 'mysql backup failed' "test -f ${BACKUP_DEST}/*/$test_db.sql"
+
+	# remove database and recreate it
+	echo "DROP DATABASE $test_db" | $mysql_admin_privs
+	echo "GRANT ALL ON $test_db.* TO $test_user@'localhost'" | $mysql_admin_privs
+	echo "CREATE DATABASE $test_db" | $mysql_admin_privs
+	echo "GRANT ALL ON $test_db.* TO $test_user@'localhost'" | $mysql_admin_privs
+
+	# make sure the database was dropped
+	echo "SELECT * FROM $test_db.$test_db" | $mysql_backup_privs >& /dev/null
+	assertFalse 'database dropped' "[ $? -eq 0 ]"
+
+	# restore!
+	$BACKUP_EXEC -r -m $tmp_model #>& /dev/null
+	assertTrue 'exit status of backup' "[ $? -eq 0 ]"
+
+	# see what came out after the restore
+	local tmp_output2=`mktemp`
+	echo "SELECT * FROM $test_db.$test_db" | $mysql_admin_privs > $tmp_output2
+
+	# take a diff between directories after restore, they should be identical
+	local -i diff_lines=`diff -urN $tmp_output1 $tmp_output2 | wc -l`
+	assertTrue 'restore not identical to backup' "[ $diff_lines -eq 0 ]"
+
+	rm -f $tmp_model
+
+	# teardown all the DB stuff
+	echo "DROP USER $test_user@'localhost'" | $mysql_admin_privs
+	echo "DROP DATABASE $test_db" | $mysql_admin_privs
+}
+
 ##################
 # SETUP/TEARDOWN #
 ##################

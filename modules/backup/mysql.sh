@@ -33,8 +33,8 @@ backup() {
 	local name=`echo $credentials | cut -d: -f3`
 	local user=`echo $credentials | cut -d: -f4`
 	local pass=`echo $credentials | cut -d: -f5-`
-	logger_info "MySQL backup initiated with credentials: '$credentials', extra parameters: '$@'"
 	[ $port -eq 0 ] && port=$DEFAULT_MYSQL_PORT
+	logger_info "MySQL backup initiated with credentials: '$credentials', extra parameters: '$@'"
 
 	# initiate the backup
 	mysqldump -h $host -P $port -u $user -p$pass $name "$@" > "$_BACKUP_DEST/$_BACKUP_OBJECT_NAME".sql
@@ -48,10 +48,11 @@ restore() {
 	# HOSTNAME:PORT:DB:USERNAME:PASSWORD
 	local credentials=$1; shift
 	local host=`echo $credentials | cut -d: -f1`
-	local port=`echo $credentials | cut -d: -f2`
+	local -i port=`echo $credentials | cut -d: -f2`
 	local name=`echo $credentials | cut -d: -f3`
 	local user=`echo $credentials | cut -d: -f4`
 	local pass=`echo $credentials | cut -d: -f5-`
+	[ $port -eq 0 ] && port=$DEFAULT_MYSQL_PORT
 	logger_info "MySQL restore initiated with credentials: '$credentials', extra parameters: '$@'"
 
 	# initiate the restore
