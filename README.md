@@ -75,11 +75,11 @@ Please have a look at some more examples under [models](models).
 
 Simplicty is key. To backup, run:
 ```
-$ ./backup -c config -m model_file
+$ ./backup -m model_file
 ```
 
 And to restore:
 ```
-$ ./backup -r -c config -m model_file
+$ ./backup -r -m model_file
 ```
 

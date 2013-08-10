@@ -19,7 +19,7 @@ log() {
 	logfile $tmp_log_file3
 }
 EOF
-	$BACKUP_EXEC -c config -m $tmp_model >& /dev/null
+	$BACKUP_EXEC -m $tmp_model >& /dev/null
 
 	assertTrue 'log file created and used' "[ -f $tmp_log_file1 ]"
 	assertTrue 'log file created and used' "[ -f $tmp_log_file2 ]"
@@ -48,7 +48,7 @@ store() {
 	cp $BACKUP_DEST
 }
 EOF
-	$BACKUP_EXEC -c config -m $tmp_model >& /dev/null
+	$BACKUP_EXEC -m $tmp_model >& /dev/null
 
 	assertTrue 'tar backup failed' "test -f ${BACKUP_DEST}/*/$backup_name.tar"
 
@@ -56,7 +56,7 @@ EOF
 	mv $BACKUP_SOURCE/$directory_to_backup $BACKUP_SOURCE/$directory_to_backup.orig
 
 	# restore!
-	$BACKUP_EXEC -r -c config -m $tmp_model >& /dev/null
+	$BACKUP_EXEC -r -m $tmp_model >& /dev/null
 	rm -f $tmp_model
 
 	# take a diff between directories after restore, they should be identical
@@ -82,7 +82,7 @@ store() {
 	cp $BACKUP_DEST
 }
 EOF
-	$BACKUP_EXEC -c config -m $tmp_model >& /dev/null
+	$BACKUP_EXEC -m $tmp_model >& /dev/null
 	rm -f $tmp_model
 
 	local backup_timestamp=`ls -1 $BACKUP_DEST`
@@ -113,7 +113,7 @@ EOF
 
 	# have at least $cycle_backups in directory
 	for i in `seq 1 $cycle_backups`; do
-		$BACKUP_EXEC -c config -m $tmp_model >& /dev/null
+		$BACKUP_EXEC -m $tmp_model >& /dev/null
 		sleep 1
 	done
 	local -i backups_nr=`ls -1 $BACKUP_DEST | wc -l`
@@ -145,7 +145,7 @@ store() {
 	cp $BACKUP_DEST
 }
 EOF
-	$BACKUP_EXEC -c config -m $tmp_model >& /dev/null
+	$BACKUP_EXEC -m $tmp_model >& /dev/null
 
 	assertTrue 'tar.gz backup failed' "test -f ${BACKUP_DEST}/*/$backup_name.tar.gz"
 
@@ -153,7 +153,7 @@ EOF
 	mv $BACKUP_SOURCE/$directory_to_backup $BACKUP_SOURCE/$directory_to_backup.orig
 
 	# restore!
-	$BACKUP_EXEC -r -c config -m $tmp_model >& /dev/null
+	$BACKUP_EXEC -r -m $tmp_model >& /dev/null
 	rm -f $tmp_model
 
 	# take a diff between directories after restore, they should be identical

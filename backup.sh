@@ -18,6 +18,9 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
+# this is where we can find our modules
+MODULES_DIR=`dirname $0`/modules
+
 # damn crontab runs without environment
 # at least get a proper PATH if running from cron
 export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
@@ -344,7 +347,6 @@ usage() {
 	echo "
 Options:
   -h             Prints this help message.
-  -c             Config file to use.
   -m             Model to run. Can be specified multiple time.
   -b             Run in backup mode (default).
   -r             Run in restore mode.
@@ -355,17 +357,16 @@ Options:
 # main
 main() {
 	local tmp_getops
-	tmp_getops=`getopt -o hc:m:br --long help,config:,model:,backup,restore -- "$@"`
+	tmp_getops=`getopt -o hm:br --long help,model:,backup,restore -- "$@"`
 	[ $? != 0 ] && usage
 	eval set -- "$tmp_getops"
 
 	# parse options
-	local config models
+	local models
 	local mode=backup
 	while true; do
 		case "$1" in
 			-h|--help) usage;;
-			-c|--config) config="$2"; shift 2;;
 			-m|--model) models="$models $2"; shift 2;;
 			-r|--restore) mode="restore"; shift 1;;
 			-b|--backup) mode="backup"; shift 1;;
@@ -373,10 +374,7 @@ main() {
 			*) usage;;
 		esac
 	done
-	[ x"$config" = x ] && usage
 	[ x"$models" = x ] && usage
-
-	source $config || logger_fatal "Failed to load config at '$config'"
 
 	local model
 	for model in $models; do
