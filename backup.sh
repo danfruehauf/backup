@@ -57,7 +57,7 @@ logger_fatal() {
 # "$@" - message to log
 _logger() {
 	local log_level=$1; shift
-	local msg="["`date`"] $@"
+	local msg="$@"
 
 	# log to all facilities
 	IFS=$'\n'
@@ -68,7 +68,7 @@ _logger() {
 		local logger_params=`echo $log_facility | cut -d' ' -f2-`
 		(source $MODULES_DIR/log/$logger_module.sh && echo $msg | initialize $log_level $logger_params)
 	done
-	echo $msg
+	echo "["`date`"] $msg"
 }
 
 # initialize all loggers, using the LOG_FACILITIES variable

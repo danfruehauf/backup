@@ -23,8 +23,10 @@
 # $1 - log level
 # $2 - log file to log to
 initialize() {
-	local log_level=$1; shift
+	local log_level=`echo $1 | tr -s "[a-z]" "[A-Z]"`; shift
 	local log_file=$1; shift
-	# TODO use $log_level
+	mkdir -p `dirname $log_file`
+	local msg_prefix="["`date`"] $log_level: "
+	echo -n "$msg_prefix" >> $log_file
 	cat >> $log_file
 }
