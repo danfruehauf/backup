@@ -337,7 +337,8 @@ process() {
 	bzip2 '.*'
 }
 
-store() { cp $BACKUP_DEST
+store() {
+	cp $BACKUP_DEST
 }
 EOF
 	$BACKUP_EXEC -m $tmp_model >& /dev/null
@@ -377,13 +378,62 @@ process() {
 	xz '.*'
 }
 
-store() { cp $BACKUP_DEST
+store() {
+	cp $BACKUP_DEST
 }
 EOF
 	$BACKUP_EXEC -m $tmp_model >& /dev/null
 	assertTrue 'exit status of backup' "[ $? -eq 0 ]"
 
 	assertTrue 'tar.xz backup failed' "test -f ${BACKUP_DEST}/*/$backup_name.tar.xz"
+
+	# remove source directory (it'll come back from backup)
+	mv $BACKUP_SOURCE/$directory_to_backup $BACKUP_SOURCE/$directory_to_backup.orig
+
+	# restore!
+	$BACKUP_EXEC -r -m $tmp_model >& /dev/null
+	assertTrue 'exit status of backup' "[ $? -eq 0 ]"
+	rm -f $tmp_model
+
+	# take a diff between directories after restore, they should be identical
+	local -i diff_lines=`diff -urN $BACKUP_SOURCE/$directory_to_backup.orig $BACKUP_SOURCE/$directory_to_backup | wc -l`
+
+	assertTrue 'restore not identical to backup' "[ $diff_lines -eq 0 ]"
+}
+
+#########
+# SPLIT #
+#########
+# test process::split
+test_module_process_split() {
+	# build a tmp model
+	# have at least 2 files here as we should test reconstruction of more than
+	# one file in the backup directory when performing a restore
+	local backup_name1="$RANDOM"
+	local backup_name2="$RANDOM"
+	local directory_to_backup=`ls -1 $BACKUP_SOURCE | head -1`
+	local tmp_model=`mktemp`
+	# max size in bytes to split files
+	local -i split_max_size=30000
+	cat > $tmp_model <<EOF
+backup() {
+	tar $backup_name1 $BACKUP_SOURCE/$directory_to_backup
+	tar $backup_name2 $BACKUP_SOURCE/$directory_to_backup
+}
+
+process() {
+	split '.*' $split_max_size
+}
+
+store() {
+	cp $BACKUP_DEST
+}
+EOF
+	$BACKUP_EXEC -m $tmp_model >& /dev/null
+	assertTrue 'exit status of backup' "[ $? -eq 0 ]"
+
+	local -i files_larger_than_max_size=`find ${BACKUP_DEST} -size +${split_max_size}c | wc -l`
+	assertTrue "files larger than $split_max_size exist" "[ $files_larger_than_max_size -eq 0 ]"
 
 	# remove source directory (it'll come back from backup)
 	mv $BACKUP_SOURCE/$directory_to_backup $BACKUP_SOURCE/$directory_to_backup.orig
