@@ -28,6 +28,9 @@ backup() {
 	local regexp="$1"; shift
 	local key_file=$1; shift
 
+	[ x"$key_file" = x ] && logger_fatal "Didn't specify key file for gpg encryption"
+	[ ! -f $key_file ] && logger_fatal "Key file '$key_file' doesn't exist"
+
 	# import key
 	local tmp_gpg_homedir=`mktemp -d`
 	if ! _import_gpg_key $tmp_gpg_homedir $key_file; then
@@ -68,7 +71,7 @@ backup() {
 # $2 - key file to decrypt with
 restore() {
 	# TODO implement
-	logger_fatal "backup::scp: Restore functionality unimplemented"
+	logger_fatal "process::gpg: Restore functionality unimplemented"
 }
 
 # imports a gpg key

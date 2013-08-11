@@ -116,7 +116,7 @@ EOF
 #########
 # MYSQL #
 #########
-# test backup::mysql backup
+# test backup::mysql backup and restore
 test_module_backup_mysql() {
 	# build a tmp model
 	local test_db="test_db_$RANDOM"
@@ -196,7 +196,7 @@ EOF
 #########
 # PGSQL #
 #########
-# test backup::pgsql backup
+# test backup::pgsql backup and restore
 test_module_backup_pgsql() {
 	# build a tmp model
 	local test_db="test_db_$RANDOM"
@@ -283,7 +283,7 @@ EOF
 ########
 # GZIP #
 ########
-# test process::bzip backup
+# test process::bzip backup and restore
 test_module_process_gzip() {
 	# build a tmp model
 	local backup_name="$RANDOM"
@@ -324,7 +324,7 @@ EOF
 #########
 # BZIP2 #
 #########
-# test process::bzip2 backup
+# test process::bzip2 backup and restore
 test_module_process_bzip2() {
 	# build a tmp model
 	local backup_name="$RANDOM"
@@ -365,7 +365,7 @@ EOF
 ######
 # XZ #
 ######
-# test process::xz backup
+# test process::xz backup and restore
 test_module_process_xz() {
 	# build a tmp model
 	local backup_name="$RANDOM"
@@ -406,7 +406,7 @@ EOF
 #########
 # SPLIT #
 #########
-# test process::split
+# test process::split backup and restore
 test_module_process_split() {
 	# build a tmp model
 	# have at least 2 files here as we should test reconstruction of more than
@@ -450,6 +450,56 @@ EOF
 
 	assertTrue 'restore not identical to backup' "[ $diff_lines -eq 0 ]"
 }
+
+#######
+# GPG #
+#######
+# test process::gpg backup (no restore)
+test_module_process_gpg() {
+	local gpg_test_key=`mktemp`
+	local gpg_test_key_default=gpg_test_key.asc
+	if [ -f $gpg_test_key_default ]; then
+		cp -a $gpg_test_key_default $gpg_test_key
+	else
+		# try to export key
+		# skip test if key doesn't exist
+		gpg --export  --armor > $gpg_test_key
+		[ $? -ne 0 ] && echo "Skipping test 'test_module_process_gpg'" && return
+	fi
+
+	assertTrue "gpg key not found" "test -f $gpg_test_key"
+
+	# build a tmp model
+	local backup_name="$RANDOM"
+	local directory_to_backup=`ls -1 $BACKUP_SOURCE | head -1`
+	local tmp_model=`mktemp`
+	cat > $tmp_model <<EOF
+backup() {
+	tar $backup_name $BACKUP_SOURCE/$directory_to_backup
+}
+
+process() {
+	gpg '.*\.tar' $gpg_test_key
+}
+
+store() {
+	cp $BACKUP_DEST
+}
+EOF
+	$BACKUP_EXEC -m $tmp_model >& /dev/null
+	assertTrue 'exit status of backup' "[ $? -eq 0 ]"
+
+	# encryption succeded?
+	assertTrue 'gpg encryption failed' "test -f ${BACKUP_DEST}/*/$backup_name.tar.gpg"
+
+	# make sure all the files are just encrypted data and not tar
+	local num_files_that_are_not_data=`find $BACKUP_DEST -type f -exec file {} \; | grep -v ': data$' | wc -l`
+	assertTrue 'non encrypted files found' "[ $num_files_that_are_not_data -eq 0 ]"
+
+	# cleanup
+	rm -f $tmp_model $gpg_test_key
+}
+
 
 #########
 # CYCLE #
