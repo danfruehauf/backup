@@ -54,6 +54,7 @@ logger_fatal() {
 }
 
 # logs a message
+# $1 - log level
 # "$@" - message to log
 _logger() {
 	local log_level=$1; shift
@@ -68,7 +69,35 @@ _logger() {
 		local logger_params=`echo $log_facility | cut -d' ' -f2-`
 		(source $MODULES_DIR/log/$logger_module.sh && echo $msg | initialize $log_level $logger_params)
 	done
-	echo "["`date`"] $msg"
+
+	# add some nice colors
+	local color=`_get_color_for_log_level $log_level`
+	log_level=`echo $log_level | tr "[a-z]" "[A-Z]"`
+	echo -e "$color["`date`"] $log_level: $msg\e[0m"
+}
+
+# returns a color for a log level
+# info - green - 32
+# warn - yellow - 33
+# fatal - red - 31
+# anything else - default - 39
+# $1 - log level
+_get_color_for_log_level() {
+	local log_level=$1; shift
+	case "$log_level" in
+	info)
+		echo "\e[32m"
+		break;;
+	warn)
+		echo "\e[33m"
+		break;;
+	fatal)
+		echo "\e[31m"
+		break;;
+	*)
+		echo "\e[39m"
+		break;;
+	esac
 }
 
 # initialize all loggers, using the LOG_FACILITIES variable
