@@ -23,7 +23,7 @@
 # $1 - log level
 # $2 - log file to log to
 initialize() {
-	local log_level=`echo $1 | tr -s "[a-z]" "[A-Z]"`; shift
+	local log_level=`echo $1 | tr "[a-z]" "[A-Z]"`; shift
 	local log_file=$1; shift
 	mkdir -p `dirname $log_file`
 	local msg_prefix="["`date`"] $log_level: "
