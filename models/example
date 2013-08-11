@@ -36,7 +36,7 @@ log() {
 backup() {
 	# copy contents of /etc/backup-dir-1 to backup context (sub directory)
 	# backup-dir-1
-	rsync backup-dir-1 /backup-dir-1
+	rsync backup-dir-1 /etc/backup-dir-1
 
 	# copy root@piglet:/etc to piglet backup
 	rsync piglet root@piglet:/etc
