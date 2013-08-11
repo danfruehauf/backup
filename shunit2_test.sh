@@ -185,11 +185,12 @@ EOF
 	local -i diff_lines=`diff -urN $tmp_output1 $tmp_output2 | wc -l`
 	assertTrue 'restore not identical to backup' "[ $diff_lines -eq 0 ]"
 
-	rm -f $tmp_model
-
 	# teardown all the DB stuff
 	echo "DROP USER $test_user@'localhost'" | $mysql_admin_privs
 	echo "DROP DATABASE $test_db" | $mysql_admin_privs
+
+	# cleanup
+	rm -f $tmp_model $tmp_output1 $tmp_output2
 }
 
 #########
@@ -274,7 +275,8 @@ EOF
 	echo "DROP DATABASE $test_db" | eval $pgsql_admin_privs >& /dev/null
 	echo "DROP ROLE $test_user" | eval $pgsql_admin_privs >& /dev/null
 
-	rm -f $tmp_model $pgpass_file_admin $pgpass_file_backup
+	rm -f $tmp_model $pgpass_file_admin $pgpass_file_backup \
+		$tmp_query_output $tmp_output1 $tmp_output2
 }
 
 
