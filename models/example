@@ -68,6 +68,10 @@ process() {
 	# encrypt all files ending with .sh with a gpg key located at
 	# /home/john/john-gpg-key.asc
 	gpg '.*\.sh$' /home/john/john-gpg-key.asc
+
+	# split files into smaller chunks
+	# split all files ('.*') into 5mb chunks, size is given in bytes
+	split '.*' 5000000
 }
 
 # store the backup

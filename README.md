@@ -76,6 +76,7 @@ Please have a look at some more examples under [models](models).
    * [bzip2](modules/process/bzip2.sh) - bzip2 compression
    * [gzip](modules/process/gzip.sh) - gzip compression
    * [xz](modules/process/xz.sh) - xz compression
+   * [split](modules/process/split.sh) - Splitting files into smaller ones
  * store
    * [cp](modules/store/cp.sh) - Store backup locally with cp
    * [scp](modules/store/scp.sh) - Store backup remotely using scp
