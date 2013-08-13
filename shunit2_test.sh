@@ -49,6 +49,45 @@ EOF
 # MODULES #
 ###########
 
+###########
+# EXECUTE #
+###########
+# test backup::execute backup and restore
+test_module_backup_execute() {
+	# build a tmp model
+	local backup_name="$RANDOM"
+	local directory_to_backup=`ls -1 $BACKUP_SOURCE | head -1`
+	local tmp_model=`mktemp`
+	local tmp_file_to_touch=`mktemp -u`
+	cat > $tmp_model <<EOF
+backup() {
+	tar $backup_name $BACKUP_SOURCE/$directory_to_backup
+	execute "touch a temporary file" touch $tmp_file_to_touch
+}
+store() {
+	cp $BACKUP_DEST
+}
+EOF
+	$BACKUP_EXEC -m $tmp_model >& /dev/null
+	assertTrue 'exit status of backup' "[ $? -eq 0 ]"
+
+	assertTrue 'execute plugin failed' "test -f $tmp_file_to_touch"
+
+	# remove tmp_file_to_touch before testing restore
+	rm -f $tmp_file_to_touch
+
+	# restore!
+	$BACKUP_EXEC -r -m $tmp_model >& /dev/null
+	assertTrue 'exit status of backup' "[ $? -eq 0 ]"
+
+	# make sure file exists again
+	assertTrue 'execute plugin failed' "test -f $tmp_file_to_touch"
+
+	# cleanup
+	rm -f $tmp_model $tmp_file_to_touch
+}
+
+
 #######
 # TAR #
 #######

@@ -67,6 +67,7 @@ Please have a look at some more examples under [models](models).
    * [logfile](modules/log/logfile.sh) - Simple log file logging
    * [syslog](modules/log/syslog.sh) - Logging to syslog via '/bin/logger'
  * backup
+   * [execute](modules/backup/execute.sh) - Execute any shell command
    * [mysql](modules/backup/mysql.sh) - MySQL database backup
    * [pgsql](modules/backup/pgsql.sh) - PostgreSQL database backup
    * [rsync](modules/backup/rsync.sh) - Pull files using rsync

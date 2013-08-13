@@ -50,6 +50,9 @@ backup() {
 
 	# backup a mysql database, pretty simple to the pgsql one
 	mysql zebra africa:3306:lions_domain:lion:hyena
+
+	# it is possible to also just run commands in this section
+	execute mount -o remount,ro /var
 }
 
 # post processing of backup
