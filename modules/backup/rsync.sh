@@ -29,3 +29,17 @@ backup() {
 		rsync -r "$@" "$backup_source" "$_BACKUP_DEST/$_BACKUP_OBJECT_NAME"
 }
 
+# restore with rsync
+# $1 - backup destination
+# "$@" - rsync parameters
+restore() {
+	local backup_source="$1"; shift
+	# TODO implement
+	# one of the difficulties here is that rsync will not copy the whole
+	# hierarchy, so if you backup /etc/passwd, it ends up just as a 'passwd'
+	# file and we can't really know how to restore it :/
+	# suggest to modify the backup() function to take care of the full path
+	# passed, so we actually know how to restore back
+	logger_fatal "backup::rsync: Restore functionality unimplemented"
+}
+
