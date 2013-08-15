@@ -36,13 +36,27 @@ log() {
 	logfile $tmp_log_file3
 }
 EOF
-	bash -x $BACKUP_EXEC -m $tmp_model >& /dev/null
+	$BACKUP_EXEC -m $tmp_model >& /dev/null
 	assertTrue 'exit status of backup' "[ $? -eq 0 ]"
 
 	assertTrue 'log file created and used' "[ -f $tmp_log_file1 ]"
 	assertTrue 'log file created and used' "[ -f $tmp_log_file2 ]"
 	assertTrue 'log file created and used' "[ -f $tmp_log_file3 ]"
 	rm -f $tmp_log_file1 $tmp_log_file2 $tmp_log_file3 $tmp_model
+}
+
+# test a bogus model file passed
+test_invalid_model() {
+	# build a tmp model
+	local backup_name="$RANDOM"
+	local tmp_model=`mktemp`
+	cat > $tmp_model <<EOF
+p[INCORRECT BASH SYNTAX((
+EOF
+	$BACKUP_EXEC -m $tmp_model >& /dev/null
+	assertFalse 'exit status of backup' "[ $? -eq 0 ]"
+
+	rm -f $tmp_model
 }
 
 ###########

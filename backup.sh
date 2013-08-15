@@ -406,6 +406,8 @@ main() {
 
 	local model
 	for model in $models; do
+		# check syntax of model
+		(source $model >& /dev/null) || logger_fatal "Model '$model' contains errors"
 		if [ "$mode" = "restore" ]; then
 			restore_main $model
 		else
