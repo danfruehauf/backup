@@ -95,6 +95,12 @@ store() {
 
 # notifications of backup status
 notify() {
+	# notify via email
+	# send to dan@somedomain.com
+	email dan@somedomain.com
+	# send to dan@somedomain.com, using smtp server mail.mail.com,port 25
+	email dan@somedomain.com mail.mail.com 25
+
 	# notify via nagios NSCA
 	# first parameter is the nagios monitor name, the rest of the parameters
 	# will just be passed to the send_nsca binary
