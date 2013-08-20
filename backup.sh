@@ -268,9 +268,9 @@ backup_main() {
 	while read command; do
 		local module=`echo $command | cut -d' ' -f1`
 		local module_parameters=`echo $command | cut -d' ' -f2-`
-		logger_info "Notifying backup status via 'notify::$module' with parameters '$? $module_parameters'"
+		logger_info "Notifying backup status via 'notify::$module' with parameters '$retval $module_parameters'"
 		# call notify() step
-		eval _notify $backup_model $retval $failed_backups_tmp_file $module $module_parameters
+		eval _notify backup $backup_model $retval $failed_backups_tmp_file $module $module_parameters
 	done < <(get_commands $backup_model notify)
 	rm -f $failed_backups_tmp_file
 
@@ -359,7 +359,7 @@ restore_main() {
 	while read command; do
 		local module=`echo $command | cut -d' ' -f1`
 		local module_parameters=`echo $command | cut -d' ' -f2-`
-		logger_info "Notifying restore status via 'notify::$module' with parameters '$? $module_parameters'"
+		logger_info "Notifying restore status via 'notify::$module' with parameters '$retval $module_parameters'"
 		# call notify() step
 		eval _notify restore $backup_model $retval $failed_backups_tmp_file $module $module_parameters
 	done < <(get_commands $backup_model notify)
