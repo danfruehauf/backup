@@ -282,7 +282,7 @@ EOF
 	local pgsql_backup_privs='PGPASSFILE=$pgpass_file_backup psql -h localhost -U $test_user -d $test_db'
 
 	# create role and database
-	echo "DROP ROLE $test_user" | eval $pgsql_admin_privs >& /dev/null 
+	echo "DROP ROLE $test_user" | eval $pgsql_admin_privs >& /dev/null
 	echo "CREATE ROLE $test_user LOGIN PASSWORD '$test_password'" | eval $pgsql_admin_privs >& /dev/null
 	echo "CREATE DATABASE $test_db owner=$test_user" | eval $pgsql_admin_privs >& /dev/null
 	assertTrue 'privileges granting' "[ $? -eq 0 ]"
@@ -586,6 +586,40 @@ EOF
 	rm -f $tmp_model
 }
 
+######
+# S3 #
+######
+# test store::s3 backup
+test_module_store_s3() {
+	# build a tmp model
+	local backup_name="$RANDOM"
+	local directory_to_backup=`ls -1 $BACKUP_SOURCE | head -1`
+	local tmp_model=`mktemp`
+	cat > $tmp_model <<EOF
+backup() {
+	tar $backup_name $BACKUP_SOURCE/$directory_to_backup
+}
+store() {
+	s3 $backup_name --access_key=$AWS_ACCESS_KEY --secret_key=$AWS_SECRET_KEY
+}
+EOF
+	s3cmd --access_key=$AWS_ACCESS_KEY --secret_key=$AWS_SECRET_KEY mb s3://$backup_name >& /dev/null
+
+	$BACKUP_EXEC -m $tmp_model >& /dev/null
+	assertTrue 'exit status of backup' "[ $? -eq 0 ]"
+
+	# restore!
+	$BACKUP_EXEC -r -m $tmp_model >& /dev/null
+	assertTrue 'exit status of backup' "[ $? -eq 0 ]"
+
+	# cleanup
+	rm -f $tmp_model
+
+	# cleanup s3 bucket
+	s3cmd --access_key=$AWS_ACCESS_KEY --secret_key=$AWS_SECRET_KEY --recursive --force del s3://$backup_name >& /dev/null
+	s3cmd --access_key=$AWS_ACCESS_KEY --secret_key=$AWS_SECRET_KEY rb s3://$backup_name >& /dev/null
+}
+
 ##################
 # SETUP/TEARDOWN #
 ##################
@@ -598,6 +632,9 @@ oneTimeSetUp() {
 	# TODO
 	#(cd $BACKUP_SOURCE_SETUP && git clone git@github.com:danfruehauf/backup.git)
 	(mkdir -p $BACKUP_SOURCE_SETUP/backup && cp -a ./* $BACKUP_SOURCE_SETUP/backup/)
+
+	# AWS settings (for S3)
+	source aws-credentials.sh
 }
 
 oneTimeTearDown() {
