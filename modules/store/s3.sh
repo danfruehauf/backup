@@ -20,13 +20,11 @@
 
 # spools backup to s3
 # $1 - bucket name
-# $2 - key prefix for backup (date will be appended)
 # "$@" - extra s3 parameters
 backup() {
 	local bucket_name="$1"; shift
-	local backup_key="$1"; shift
 
-	backup_key_timestamp=$backup_key/`_generate_date`
+	backup_key_timestamp=`_generate_date`
 
 	logger_info "Spooling backup to S3 bucket 's3://$bucket_name/$backup_key_timestamp'"
 	s3cmd "$@" --recursive put $_BACKUP_DEST/* s3://$bucket_name/$backup_key_timestamp/
@@ -34,17 +32,14 @@ backup() {
 
 # pulls backups from s3 (latest backup)
 # $1 - bucket name
-# $2 - key for backup
 # "$@" - extra s3 parameters
 restore() {
 	local bucket_name="$1"; shift
-	local backup_key="$1"; shift
 
 	local latest_backup
-	latest_backup=`s3cmd "$@" ls s3://$bucket_name/$backup_key/ | tr -s " " | cut -d' ' -f3 | sort | tail -1`
-	last_backup=`ls -1tr $backup_destination | tail -1`
+	latest_backup=`s3cmd "$@" ls s3://$bucket_name/ | tr -s " " | cut -d' ' -f3 | sort | tail -1`
 	if [ $? -ne 0 ]; then
-		logger_fatal "No backups found in 's3://$bucket_name/$backup_key/'"
+		logger_fatal "No backups found in 's3://$bucket_name/'"
 	fi
 
 	logger_info "Latest backup in bucket is '$latest_backup'"
