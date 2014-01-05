@@ -91,6 +91,9 @@ store() {
 	# password authentication is not support, use key exchange if you need
 	# scp backups
 	scp backy root@crapper:/var/backups -i ~/.ssh/id_rsa
+
+	# store backup on Amazon S3 in bucket 'cake'
+	s3 cake --access_key=AWS_ACCESS_KEY --secret_key=AWS_SECRET_KEY
 }
 
 # notifications of backup status
