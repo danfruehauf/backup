@@ -83,6 +83,7 @@ Please have a look at some more examples under [models](models).
    * [scp](modules/store/scp.sh) - Store backup remotely using scp
    * [cycle](modules/store/cycle.sh) - Used to cycle backups
    * [s3](modules/store/s3.sh) - Store backups on Amazon S3
+   * [s3_cycle](modules/store/s3_cycle.sh) - Used to cycle backups on Amazon S3
  * notify
    * [email](modules/notify/email.sh) - Notify via email, using mailx
    * [pushover](modules/notify/pushover.sh) - Notify via [pushover](https://pushover.net)
