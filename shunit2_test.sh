@@ -574,8 +574,9 @@ store() {
 }
 EOF
 
-	# have at least $cycle_backups in directory
-	for i in `seq 1 $cycle_backups`; do
+	# have at least $cycle_backups+3 in directory
+	local -i backups_to_procude=`expr $cycle_backups + 3`
+	for i in `seq 1 $backups_to_procude`; do
 		$BACKUP_EXEC -m $tmp_model >& /dev/null
 		assertTrue 'exit status of backup' "[ $? -eq 0 ]"
 	done
@@ -584,6 +585,45 @@ EOF
 		"[ $backups_nr -eq $cycle_backups ]"
 
 	rm -f $tmp_model
+}
+
+############
+# S3_CYCLE #
+############
+# test store::cycle backup
+test_module_store_s3_cycle() {
+	# build a tmp model
+	local -i cycle_backups=2
+	local backup_name="$RANDOM"
+	local tmp_model=`mktemp`
+	cat > $tmp_model <<EOF
+backup() {
+	tar $backup_name $BACKUP_SOURCE/$directory_to_backup
+}
+store() {
+	s3 $backup_name --access_key=$AWS_ACCESS_KEY --secret_key=$AWS_SECRET_KEY
+	s3_cycle $backup_name $cycle_backups --access_key=$AWS_ACCESS_KEY --secret_key=$AWS_SECRET_KEY
+}
+EOF
+
+	s3cmd --access_key=$AWS_ACCESS_KEY --secret_key=$AWS_SECRET_KEY mb s3://$backup_name >& /dev/null
+
+	# have at least $cycle_backups+3 in directory
+	local -i backups_to_procude=`expr $cycle_backups + 3`
+	for i in `seq 1 $backups_to_procude`; do
+		$BACKUP_EXEC -m $tmp_model >& /dev/null
+		assertTrue 'exit status of backup' "[ $? -eq 0 ]"
+	done
+	local -i backups_nr=`s3cmd --access_key=$AWS_ACCESS_KEY --secret_key=$AWS_SECRET_KEY ls s3://$backup_name | wc -l`
+
+	assertTrue "cycling broken in bucket, have $backups_nr, expected: $cycle_backups" \
+		"[ $backups_nr -eq $cycle_backups ]"
+
+	rm -f $tmp_model
+
+	# cleanup s3 bucket
+	s3cmd --access_key=$AWS_ACCESS_KEY --secret_key=$AWS_SECRET_KEY --recursive --force del s3://$backup_name >& /dev/null
+	s3cmd --access_key=$AWS_ACCESS_KEY --secret_key=$AWS_SECRET_KEY rb s3://$backup_name >& /dev/null
 }
 
 ######
