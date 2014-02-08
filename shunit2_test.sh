@@ -139,6 +139,40 @@ EOF
 	assertTrue 'restore not identical to backup' "[ $diff_lines -eq 0 ]"
 }
 
+# test backup::tar backup and exclude
+test_module_backup_tar_excludes() {
+	# build a tmp model
+	local backup_name="$RANDOM"
+	local directory_to_backup=`ls -1 $BACKUP_SOURCE | head -1`
+	local file_to_exclude=$BACKUP_SOURCE/$directory_to_backup/EXCLUDED
+	echo "this file is excluded" > $file_to_exclude
+	local tmp_model=`mktemp`
+	cat > $tmp_model <<EOF
+backup() {
+	tar $backup_name $BACKUP_SOURCE/$directory_to_backup --exclude=EXCLUDED
+}
+
+store() {
+	cp $BACKUP_DEST
+}
+EOF
+
+	$BACKUP_EXEC -m $tmp_model >& /dev/null
+	assertTrue 'exit status of backup' "[ $? -eq 0 ]"
+
+	assertTrue 'tar backup failed' "test -f ${BACKUP_DEST}/*/$backup_name.tar"
+
+	# remove source directory (it'll come back from backup)
+	mv $BACKUP_SOURCE/$directory_to_backup $BACKUP_SOURCE/$directory_to_backup.orig
+
+	# restore!
+	$BACKUP_EXEC -r -m $tmp_model >& /dev/null
+	assertTrue 'exit status of backup' "[ $? -eq 0 ]"
+	rm -f $tmp_model
+
+	assertFalse 'excluded file found after restore' "[ -f $file_to_exclude ]"
+}
+
 #########
 # RSYNC #
 #########
