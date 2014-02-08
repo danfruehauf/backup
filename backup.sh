@@ -378,6 +378,7 @@ Options:
   -m             Model to run. Can be specified multiple time.
   -b             Run in backup mode (default).
   -r             Run in restore mode.
+  -t             Temp directory for operation.
 "
 	exit 2
 }
@@ -385,24 +386,29 @@ Options:
 # main
 main() {
 	local tmp_getops
-	tmp_getops=`getopt -o hm:br --long help,model:,backup,restore -- "$@"`
+	tmp_getops=`getopt -o hm:brt: --long help,model:,backup,restore,tmp-dir: -- "$@"`
 	[ $? != 0 ] && usage
 	eval set -- "$tmp_getops"
 
 	# parse options
 	local models
 	local mode=backup
+	local tmp_dir
 	while true; do
 		case "$1" in
 			-h|--help) usage;;
 			-m|--model) models="$models $2"; shift 2;;
 			-r|--restore) mode="restore"; shift 1;;
 			-b|--backup) mode="backup"; shift 1;;
+			-t|--tmp-dir) tmp_dir="$2"; shift 2;;
 			--) shift; break;;
 			*) usage;;
 		esac
 	done
 	[ x"$models" = x ] && usage
+
+	# set TMPDIR if specified by the user
+	[ x"$tmp_dir" != x ] && export TMPDIR=$tmp_dir
 
 	local model
 	for model in $models; do
