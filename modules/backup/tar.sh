@@ -21,15 +21,34 @@
 # tars arguments
 # "$@" - arguments for tar, usually it'll be filenames
 backup() {
+	local sudo=""
+	if _sudo "$@"; then
+		shift # remove the argument
+		local sudo="sudo"
+	fi
+
 	# simply create a tar archive
 	logger_info "Creating tar archive with parameters '$@'"
-	(cd / && tar -cf $_BACKUP_DEST/$_BACKUP_OBJECT_NAME.tar "$@")
+	(cd / && $sudo tar -cf $_BACKUP_DEST/$_BACKUP_OBJECT_NAME.tar "$@")
 }
 
 # untar
 # "$@" - arguments for tar, usually it'll be the filename to untar - unused!!
 restore() {
+	local sudo=""
+	if _sudo "$@"; then
+		shift # remove the argument
+		local sudo="sudo"
+	fi
+
 	# restore tar archive
 	logger_info "Untarring with parameters '$@'"
-	(cd / && tar -xf $_BACKUP_DEST/$_BACKUP_OBJECT_NAME.tar)
+	(cd / && $sudo tar -xf $_BACKUP_DEST/$_BACKUP_OBJECT_NAME.tar)
+}
+
+# returns 0 if --sudo is set, 1 otherwise
+# "$@" - arguments for tar, will parse --sudo
+_sudo() {
+	[ x"$1" != x ] && [ "$1" = "--sudo" ] && return 0
+	return 1
 }
