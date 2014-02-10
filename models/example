@@ -43,6 +43,15 @@ backup() {
 	# and add piglet:/var to piglet backup
 	rsync piglet root@piglet:/var
 
+	# make an archive out of a bunch of files
+	tar cow /etc/passwd /etc/sysconfig/kernel
+
+	# make an archive using sudo
+	tar cow --sudo /etc/passwd /etc/sysconfig/kernel
+
+	# make an archive using sudo with some excludes
+	tar cow /etc --exclude=/etc/passwd
+
 	# backup a pgsql database
 	# the tuple below is:
 	# HOSTNAME:PORT:DB:USERNAME:PASSWORD
