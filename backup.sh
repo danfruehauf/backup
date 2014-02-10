@@ -87,16 +87,16 @@ _get_color_for_log_level() {
 	case "$log_level" in
 	info)
 		echo "\e[32m"
-		break;;
+		;;
 	warn)
 		echo "\e[33m"
-		break;;
+		;;
 	fatal)
 		echo "\e[31m"
-		break;;
+		;;
 	*)
 		echo "\e[39m"
-		break;;
+		;;
 	esac
 }
 
