@@ -121,6 +121,10 @@ notify() {
 	# will just be passed to the send_nsca binary
 	nagios_nsca "backup monitor" -H nagios.emii.org.au
 
+	# write status to file using nagios format
+	# will write status to /var/log/backup/status/BACKUP_MODEL_NAME
+	nagios_status /var/log/backup/status/
+
 	# notify via pushover, implemented with curl
 	# you'll just have to specify the user token and app token
 	pushover USER_TOKEN APP_TOKEN

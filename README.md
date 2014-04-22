@@ -88,6 +88,7 @@ Please have a look at some more examples under [models](models).
    * [email](modules/notify/email.sh) - Notify via email, using mailx
    * [pushover](modules/notify/pushover.sh) - Notify via [pushover](https://pushover.net)
    * [nagios_nsca](modules/notify/nagios_nsca.sh) - Notify via Nagios NSCA
+   * [nagios_status](modules/notify/nagios_status.sh) - Writes status to file in Nagios format
 
 ## Usage
 
