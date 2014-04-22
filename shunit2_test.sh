@@ -728,6 +728,59 @@ EOF
 	s3cmd --access_key=$AWS_ACCESS_KEY --secret_key=$AWS_SECRET_KEY rb s3://$backup_name >& /dev/null
 }
 
+#################
+# NAGIOS_STATUS #
+#################
+# test notify::nagios_status backup
+test_module_notify_nagios_status() {
+	# build a tmp model
+	local backup_name="$RANDOM"
+	local directory_to_backup=`ls -1 $BACKUP_SOURCE | head -1`
+	local tmp_model=`mktemp`
+	local model_name=`basename $tmp_model`
+	local tmp_status_dir=`mktemp -d`
+	cat > $tmp_model <<EOF
+backup() {
+	tar $backup_name $BACKUP_SOURCE/$directory_to_backup
+}
+notify() {
+	nagios_status $tmp_status_dir
+}
+EOF
+
+	# backup!
+	$BACKUP_EXEC -m $tmp_model >& /dev/null
+	assertTrue 'exit status of backup' "[ $? -eq 0 ]"
+
+	# compare success message
+	local status_message=`cat $tmp_status_dir/$model_name`
+	assertTrue 'nagios_status message' \
+		"[ '$status_message' = 'OK: Backup successful' ]"
+
+	# create a backup model that'll fail
+	cat > $tmp_model <<EOF
+backup() {
+	tar $backup_name /non-existing-directory
+}
+notify() {
+	nagios_status $tmp_status_dir
+}
+EOF
+
+	# backup (should fail here!)
+	$BACKUP_EXEC -m $tmp_model >& /dev/null
+	assertFalse 'exit status of backup' "[ $? -eq 0 ]"
+
+	local status_message=`cat $tmp_status_dir/$model_name`
+	assertTrue 'nagios_status message' \
+		"[ '$status_message' = 'Critical: Backup failed for: backup::tar' ]"
+
+	# cleanup
+	rm -f $tmp_model
+	rm -f $tmp_status_dir/$model_name
+	rmdir $tmp_status_dir
+}
+
 ##################
 # SETUP/TEARDOWN #
 ##################
