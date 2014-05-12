@@ -92,6 +92,10 @@ store() {
 	# copy backup locally to /var/backups
 	cp /var/backups
 
+	# alternatively, one could use mv, however this must be the last store
+	# operation as it will remove the backup from its place
+	mv /var/backups
+
 	# cycle local backups, leaving only the 2 latest backups
 	cycle /var/backups 2
 
