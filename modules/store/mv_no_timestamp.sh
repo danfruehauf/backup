@@ -26,7 +26,7 @@ backup() {
 
 	logger_info "Using mv to move backup to '$backup_destination'"
 	mkdir -p "$backup_destination" && \
-		mv -a "$@" $_BACKUP_DEST/* "$backup_destination"
+		mv "$@" $_BACKUP_DEST/* "$backup_destination"
 }
 
 # restores the backup using cp (instead of mv)
