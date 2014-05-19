@@ -20,22 +20,13 @@
 
 # moves backup with mv
 # $1 - backup destination
-# "$@" - cp parameters
+# "$@" - mv parameters
 backup() {
-	local backup_destination_prefix="$1"; shift
-
-	local backup_destination
-	backup_destination="$backup_destination_prefix/"`_generate_date`
-	# ugly but simple, just sleep for 1 second
-	while [ -d "$backup_destination" ]; do
-		logger_info "'$backup_destination' already exists"
-		sleep 1
-		backup_destination="$backup_destination_prefix/"`_generate_date`
-	done
+	local backup_destination="$1"; shift
 
 	logger_info "Using mv to move backup to '$backup_destination'"
 	mkdir -p "$backup_destination" && \
-		mv "$@" $_BACKUP_DEST/* "$backup_destination"
+		mv -a "$@" $_BACKUP_DEST/* "$backup_destination"
 }
 
 # restores the backup using cp (instead of mv)
@@ -43,13 +34,6 @@ backup() {
 # "$@" - cp parameters
 restore() {
 	local backup_destination="$1"; shift
-
-	# select last backup in $backup_destination
-	local last_backup
-	last_backup=`ls -1tr $backup_destination | tail -1`
-	if [ $? -ne 0 ]; then
-		logger_fatal "No backups found in '$backup_destination'"
-	fi
 
 	# copy last backup to the restoration directory
 	logger_info "Using cp to copy backup from '$backup_destination/$last_backup'"
