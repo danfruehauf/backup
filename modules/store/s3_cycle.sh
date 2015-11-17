@@ -33,7 +33,7 @@ backup() {
 	fi
 
 	local tmp_bucket_contents=`mktemp`
-	s3cmd "$@" ls s3://$bucket_name | tr -s " " | cut -d' ' -f3 | sort -r >& $tmp_bucket_contents
+	s3cmd "$@" ls s3://$bucket_name/ | tr -s " " | cut -d' ' -f3 | sort -r >& $tmp_bucket_contents
 	local -i total_backups=`cat $tmp_bucket_contents | wc -l`
 
 	if [ $total_backups -eq 0 ]; then
