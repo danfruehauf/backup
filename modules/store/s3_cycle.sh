@@ -46,7 +46,7 @@ backup() {
 	if [ $backups_to_remove -gt 0 ]; then
 		logger_info "Removing '$backups_to_remove' backups in bucket 's3://$bucket_name'"
 		local backup_to_remove
-		for backup_to_remove in `tail -$backup_to_remove $tmp_bucket_contents`; do
+		for backup_to_remove in `tail -q -$backup_to_remove $tmp_bucket_contents`; do
 			logger_info "Removing '$backup_to_remove'"
 			s3cmd "$@" --recursive del $backup_to_remove
 		done
