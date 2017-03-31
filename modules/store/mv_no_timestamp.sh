@@ -39,4 +39,3 @@ restore() {
 	logger_info "Using cp to copy backup from '$backup_destination/$last_backup'"
 	cp -a "$@" $backup_destination/$last_backup/* $_BACKUP_DEST/
 }
-

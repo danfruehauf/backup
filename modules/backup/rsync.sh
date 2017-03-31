@@ -42,4 +42,3 @@ restore() {
 	# passed, so we actually know how to restore back
 	logger_fatal "backup::rsync: Restore functionality unimplemented"
 }
-

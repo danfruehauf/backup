@@ -58,4 +58,3 @@ restore() {
 	# initiate the restore
 	mysql -h $host -P $port -u $user -p$pass $name "$@" < "$_BACKUP_DEST/$_BACKUP_OBJECT_NAME".sql
 }
-

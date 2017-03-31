@@ -39,4 +39,3 @@ restore() {
 	# TODO implement
 	logger_fatal "backup::scp: Restore functionality unimplemented"
 }
-

@@ -109,7 +109,7 @@ store() {
 	s3 cake --access_key=AWS_ACCESS_KEY --secret_key=AWS_SECRET_KEY
 
 	# leave the last 3 backups in the 'cake' S3 bucket
-	s3 cake 3 --access_key=AWS_ACCESS_KEY --secret_key=AWS_SECRET_KEY
+	s3_cycle cake 3 --access_key=AWS_ACCESS_KEY --secret_key=AWS_SECRET_KEY
 }
 
 # notifications of backup status

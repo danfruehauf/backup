@@ -48,4 +48,3 @@ restore() {
 	logger_info "Pulling backup from S3 bucket '$latest_backup'"
 	s3cmd "$@" --recursive get $latest_backup $_BACKUP_DEST/
 }
-

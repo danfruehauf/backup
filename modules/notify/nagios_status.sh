@@ -75,4 +75,3 @@ restore() {
 	# write to file
 	echo $message > $status_dir/$backup_model
 }
-

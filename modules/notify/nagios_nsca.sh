@@ -75,4 +75,3 @@ restore() {
 	# send via nsca
 	echo $formatted_nsca_message | /usr/sbin/send_nsca -d';' "$@"
 }
-
